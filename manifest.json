@@ -3,117 +3,56 @@
   "background_color": "#466FA2",
   "display": "minimal-ui",
   "start_url": "/",
-  "icons": [{
-      "src": "/img/icon.svg",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/img/icon-36x36.png",
-      "sizes": "36x36",
-      "type": "image/png"
-    },
-    {
-      "src": "/img/icon-48x48.png",
-      "sizes": "48x48",
-      "type": "image/png"
-    },
-    {
-      "src": "/img/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png"
-    },
-    {
-      "src": "/img/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "/img/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    },
-    {
-      "src": "/img/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Inbox",
-      "url": "/"
-    },
-    {
-      "name": "Compose New Email",
-      "url": "/compose/"
-    },
-    {
-      "name": "Calendar",
-      "url": "/calendar/"
-    },
-    {
-      "name": "New Calendar Event",
-      "url": "/calendar/create/"
-    },
-    {
-      "name": "ToDos",
-      "url": "/todos/"
-    },
-    {
-      "name": "New ToDo",
-      "url": "/todos/create/"
-    }
-  ],
+  "icons": [ "Array of ImageResouces" ],
+  "shortcuts": [ "Array of ShortcutItems" ],
   "widgets": [
     {
       "name": "Agenda",
+      "url": "/widgets/agenda/",
       "type": "text/calendar",
       "widget": "agenda",
       "data": "/widgets/data/agenda.ical",
       "update": "900",
-      "backgrounds": [
+      "icons": [ "Array of ImageResouces" ],
+      "backgrounds": [ "Array of ImageResouces" ],
+      "actions": [
         {
-          "src": "/widgets/images/agenda-background.svg",
-          "type": "image/svg+xml"
+          "action": "create-event",
+          "title": "New Event",
+          "icons": [ "Array of ImageResouces" ]
         },
         {
-          "src": "/widgets/images/agenda-background-1200x960.png",
-          "sizes": "1200x960",
-          "type": "image/png"
-        },
-        {
-          "src": "/widgets/images/agenda-background-800x600.png",
-          "sizes": "800x600",
-          "type": "image/png"
+          "action": "today",
+          "title": "Today",
+          "icons": [ "Array of ImageResouces" ]
         }
       ],
       "ms-acn": {
         "prefer": "medium",
-        "small": "/widgets/data/agenda-small.json",
-        "medium": "/widgets/data/agenda-medium.json",
-        "large": "/widgets/data/agenda-large.json"
+        "small": "/widgets/data/agenda-acn-small.json",
+        "medium": "/widgets/data/agenda-acn-medium.json",
+        "large": "/widgets/data/agenda-acn-large.json"
       }
     },
     {
       "name": "Latest Emails",
+      "url": "/widgets/inbox/",
       "type": "application/atom+xml",
       "widget": "mailbox",
       "data": "/widgets/data/inbox.xml",
       "update": "900",
-      "backgrounds": [
+      "icons": [ "Array of ImageResouces" ],
+      "backgrounds": [ "Array of ImageResouces" ],
+      "actions": [
         {
-          "src": "/widgets/images/inbox-background.svg",
-          "type": "image/svg+xml"
+          "action": "create-message",
+          "title": "New Message",
+          "icons": [ "Array of ImageResouces" ]
         },
         {
-          "src": "/widgets/images/inbox-background-1200x960.png",
-          "sizes": "1200x960",
-          "type": "image/png"
-        },
-        {
-          "src": "/widgets/images/inbox-background-800x600.png",
-          "sizes": "800x600",
-          "type": "image/png"
+          "action": "sync",
+          "title": "Sync",
+          "icons": [ "Array of ImageResouces" ]
         }
       ],
       "ms-acn": {
@@ -125,24 +64,18 @@
     },
     {
       "name": "ToDo List",
+      "url": "/widgets/todos/",
       "type": "application/atom+xml",
       "widget": "task-list",
       "data": "/widgets/data/todos.xml",
       "update": "1800",
-      "backgrounds": [
+      "icons": [ "Array of ImageResouces" ],
+      "backgrounds": [ "Array of ImageResouces" ],
+      "actions": [
         {
-          "src": "/widgets/images/todos-background.svg",
-          "type": "image/svg+xml"
-        },
-        {
-          "src": "/widgets/images/todos-background-1200x960.png",
-          "sizes": "1200x960",
-          "type": "image/png"
-        },
-        {
-          "src": "/widgets/images/todos-background-800x600.png",
-          "sizes": "800x600",
-          "type": "image/png"
+          "action": "create-task",
+          "title": "Add a Task",
+          "icons": [ "Array of ImageResouces" ]
         }
       ],
       "ms-acn": {
