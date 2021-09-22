@@ -1,6 +1,21 @@
 # PWA widgets
 
-Playing with some ideas around widget definitions for PWAs
+Playing with some ideas around widget definitions for PWAs.
+
+## The idea
+
+For the last few years, I’ve been thinking about the many ways native applications can expose information and/or focused tasks within operating systems. Examples of this include Android Home Screen Widgets, macOS Dashboard and Today Panel Widgets, the Apple Touch Bar, Samsung Daily Cards, Mini App Widgets, and so on. When building app experiences as Progressive Web Apps, it could be very useful to be able to project aspects of the web app onto these surfaces (originally I’d considered these "projections" but most systems do call them widgets, so I opted to go with the flow).
+
+Here are a few use cases:
+
+* A streaming video service could offer access to all of the shows or movies you have in your queue that is distinct from the actual player. It might live in a widget on one device, but, with access to all of the plumbing of the PWA itself, could enable users to control the services’ PWA running on the user’s smart TV.
+* A stock tracking app could offer a widget for viewing current stock prices for stocks you are watching.
+* A calendar service could provide a daily agenda at a glance.
+* A music identification service could have a button widget that, when clicked, would access the microphone and attempt to ID the currently playing song.
+
+Given that the web is responsive, the actual widget surface’s dimensions should not matter much. The projection would merely adapt to the available real estate. Some might even be resizable based on user preference.
+
+These are very similar to additional windows and `iframe`s in the traditional browser context, but would probably need to be plumbed quite differently to keep their overhead low. But more on that below.
 
 ## The container
 
