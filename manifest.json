@@ -8,6 +8,7 @@
   "widgets": [
     {
       "name": "Agenda",
+      "id": "agenda",
       "url": "/widgets/agenda/",
       "type": "text/calendar",
       "template": "agenda",
@@ -36,6 +37,7 @@
     },
     {
       "name": "Latest Emails",
+      "id": "inbox",
       "url": "/widgets/inbox/",
       "type": "application/atom+xml",
       "template": "mailbox",
@@ -64,6 +66,7 @@
     },
     {
       "name": "ToDo List",
+      "id": "todos",
       "url": "/widgets/todos/",
       "type": "application/atom+xml",
       "template": "task-list",
