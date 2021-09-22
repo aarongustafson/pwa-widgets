@@ -11,10 +11,10 @@ Widgets would be defined within a `widgets` member in the Web App Manifest. The 
 ```json
 {
   "name": "Agenda",
-  "tag": "widget-agenda",
+  "id": "widget-agenda",
   "url": "/widgets/agenda/",
   "type": "text/calendar",
-  "widget": "agenda",
+  "template": "agenda",
   "data": "/widgets/data/agenda.ical",
   "update": "900",
   "icons": [ ],
@@ -37,7 +37,7 @@ A widget’s network connection and update cycle is governed by a [Service Worke
 
 The `name` value is a `DOMString` that will serve as the title of the widget presented to users.
 
-The `tag` value is a `DOMString` that will serve as a `client.id` referring to the widget within the Service Worker as a `WidgetClient` (and within [the `Clients` interface](https://www.w3.org/TR/service-workers/#service-worker-client-concept)). `WidgetClient` still needs to be defined, but will be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
+The `id` value is a `DOMString` that will serve as a `client.id` referring to the widget within the Service Worker as a `WidgetClient` (and within [the `Clients` interface](https://www.w3.org/TR/service-workers/#service-worker-client-concept)). `WidgetClient` still needs to be defined, but will be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
 
 A widget’s [language](https://www.w3.org/TR/appmanifest/#lang-member) and [text direction](https://www.w3.org/TR/appmanifest/#dir-member) are inherited from the Web App Manifest in which it is defined.
 
