@@ -3,29 +3,29 @@
   "background_color": "#466FA2",
   "display": "minimal-ui",
   "start_url": "/",
-  "icons": [ "Array of ImageResouces" ],
-  "shortcuts": [ "Array of ShortcutItems" ],
+  "icons": ["Array of ImageResouces"],
+  "shortcuts": ["Array of ShortcutItems"],
   "widgets": [
     {
       "name": "Agenda",
-      "id": "agenda",
+      "tag": "agenda",
       "url": "/widgets/agenda/",
       "type": "text/calendar",
       "template": "agenda",
       "data": "/widgets/data/agenda.ical",
       "update": "900",
-      "icons": [ "Array of ImageResouces" ],
-      "backgrounds": [ "Array of ImageResouces" ],
+      "icons": ["Array of ImageResouces"],
+      "backgrounds": ["Array of ImageResouces"],
       "actions": [
         {
           "action": "create-event",
           "title": "New Event",
-          "icons": [ "Array of ImageResouces" ]
+          "icons": ["Array of ImageResouces"]
         },
         {
           "action": "today",
           "title": "Today",
-          "icons": [ "Array of ImageResouces" ]
+          "icons": ["Array of ImageResouces"]
         }
       ],
       "ms-acn": {
@@ -37,24 +37,24 @@
     },
     {
       "name": "Latest Emails",
-      "id": "inbox",
+      "tag": "inbox",
       "url": "/widgets/inbox/",
       "type": "application/atom+xml",
       "template": "mailbox",
       "data": "/widgets/data/inbox.xml",
       "update": "900",
-      "icons": [ "Array of ImageResouces" ],
-      "backgrounds": [ "Array of ImageResouces" ],
+      "icons": ["Array of ImageResouces"],
+      "backgrounds": ["Array of ImageResouces"],
       "actions": [
         {
           "action": "create-message",
           "title": "New Message",
-          "icons": [ "Array of ImageResouces" ]
+          "icons": ["Array of ImageResouces"]
         },
         {
           "action": "sync",
           "title": "Sync",
-          "icons": [ "Array of ImageResouces" ]
+          "icons": ["Array of ImageResouces"]
         }
       ],
       "ms-acn": {
@@ -66,19 +66,19 @@
     },
     {
       "name": "ToDo List",
-      "id": "todos",
+      "tag": "todos",
       "url": "/widgets/todos/",
       "type": "application/atom+xml",
       "template": "task-list",
       "data": "/widgets/data/todos.xml",
       "update": "1800",
-      "icons": [ "Array of ImageResouces" ],
-      "backgrounds": [ "Array of ImageResouces" ],
+      "icons": ["Array of ImageResouces"],
+      "backgrounds": ["Array of ImageResouces"],
       "actions": [
         {
           "action": "create-task",
           "title": "Add a Task",
-          "icons": [ "Array of ImageResouces" ]
+          "icons": ["Array of ImageResouces"]
         }
       ],
       "ms-acn": {
