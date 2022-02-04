@@ -15,10 +15,10 @@ Here are a few use cases:
 
 It’s expected that each Widget Host will provide different opportunities and have different constraints that depend on a variety of factors including memory use and power management. As such, this proposal outlines a means of defining two alternative approaches within the same Widget definition (`WidgetDefinition`) that would accommodate both scenarios:
 
-1. Templated Widgets
-2. Rich Widgets
+1. [Templated Widgets](#Templated-Widgets)
+2. [Rich Widgets](#Rich-Widgets)
 
-Under this proposal, developers would be free to define Widgets using only one approach, but should do so with the understanding that choosing a single path may limit the distribution/install-ability of their widget.
+Under this proposal, developers would be free to define Widgets that support both approaches or only one. In supporting only one, they should be aware that choosing a single path may limit the distribution/install-ability of that Widget.
 
 ## Templated Widgets
 
