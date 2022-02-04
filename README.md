@@ -111,11 +111,17 @@ The `name` value is a `DOMString` that will serve as the title of the widget pre
 The `tag` value is a `DOMString` that will serve as a way to reference the widget within the Service Worker as a `WidgetClient` and is analogous to a [Notification `tag`](https://notifications.spec.whatwg.org/#tag). `WidgetClient` still needs to be defined, but will be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
 
 
+### Rich Widget properties
+
+A [Rich Widget](#Rich-Widgets) MUST include a `url` property, which is a valid `URL` string pointing to the Widget’s HTML. That URL MUST exist within [the scope of the Web App Manifest](https://w3c.github.io/manifest/#dfn-scope) and [the scope of the Service Worker](https://w3c.github.io/ServiceWorker/#dom-serviceworkerregistration-scope).
+
+*Note: Rich Widgets will likely be resource-limited, so developers are advised to avoid relying on large client-side libraries to render and update Rich Widgets.*
+
 ### Templated Widget properties
 
-A Templated Widget MUST include the following properties:
+A [Templated Widget](#Templated-Widgets) MUST include the following properties:
 
-* `data` - the URL where the data for the widget can be found; if the format is unsupported, the widget would not be offered.
+* `data` - the `URL` where the data for the widget can be found; if the format is unsupported, the widget would not be offered.
 * `type` - the MIME type of the data feed for the widget; if unsupported, the widget would not be offered.
 * `template` - the template the developer would like the Widget Host to use; if unsupported, the host may offer an analogous widget experience (determined using the `type` value) or the widget would not be offered.
 
