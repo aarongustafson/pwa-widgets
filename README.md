@@ -54,7 +54,52 @@ For productivity apps:
 
 ### Data flow in a Templated Widget
 
-TODO: Fill this in.
+Data flow in a Templated Widget is largely managed in two ways:
+
+1. Data flows from the Service Worker to a Widget via the `showWidget()` method.
+2. Data (in the form of interaction) flows from the Widget to the Service Worker via a `WidgetEvent` `tag`-ed to the specific Widget.
+
+Here is an example of how this might look in the context of a Periodic Sync:
+
+<figure id="periodic-sync">
+<video src="media/sync.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+</figure>
+
+This video shows the following steps:
+
+1. As part of a Periodic Sync, the Service Worker makes a Request to the host or some other endpoint.
+2. The Response comes back.
+3. As the Service Worker is aware of which widgets rely on that data, via the `WidgetDefinition` provided during install, the Service Worker can identify which widgets need updating. (This is internal logic and not shown in the video).
+3. The Service Worker takes that data—perhaps packaging it with other instructions—and uses `showWidget()` to update the specific widgets that make use of that data.
+
+To show a more complicated set of examples, consider what should happen if certain Widgets depend on authentication and the user happens to log out in the PWA or a browser tab. The developers would need to track this and ensure the Service Worker is notified so it can replace any auth-requiring Widgets with a prompt back into the app to log in.
+
+Here’s how that might work:
+
+<figure id="user-logout">
+<video src="media/user-logout.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+</figure>
+
+This video shows:
+
+1. The user logging out from the context of a Client. When that happens, the Client, sends a `postMessage()` to the Service Worker, alerting it to the state change in the app.
+2. The Service Worker maintains a list of active Widgets and is aware of which ones require authentication. Knowing it’s been revoked, it pushes a new template to each auth-requiring Widget with a notice and a button to prompt the user to log in again.
+
+The next ste in this flow would be for the use to log back in. They could do that directly in the Client, but let’s use the `WidgetAction` provided in the previous step:
+
+<figure id="user-login">
+<video src="media/user-login.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+</figure>
+
+This video shows:
+
+1. The user clicking the "Login" action in the Widget. This triggers a `WidgetEvent` called "login".
+2. The Service Worker is listening for that action and redirects the user directly to the login page of the app, either in an existing Client or a new Client (if one is not open).
+3. The user logs in and the app sends a `postMessage()` to the Service Worker letting it know the user is authenticated again.
+4. The Service Worker grabs new data from the network.
+5. The Service Worker pipes that data back into the auth-requiring Widgets.
+
+You can see more examples in [the `WidgetEvent` section](#Widget-related-Events).
 
 ## Rich Widgets
 
@@ -165,7 +210,7 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 }
 ```
 
-## Events
+## Widget-related Events
 
 TODO: Fill this in.
 
