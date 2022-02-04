@@ -28,7 +28,7 @@
           "icons": ["Array of ImageResouces"]
         }
       ],
-      "ms-acn": {
+      "ms-ac": {
         "prefer": "medium",
         "small": "/widgets/data/agenda-acn-small.json",
         "medium": "/widgets/data/agenda-acn-medium.json",
@@ -57,7 +57,7 @@
           "icons": ["Array of ImageResouces"]
         }
       ],
-      "ms-acn": {
+      "ms-ac": {
         "prefer": "medium",
         "small": "/widgets/data/inbox-small.json",
         "medium": "/widgets/data/inbox-medium.json",
@@ -81,7 +81,7 @@
           "icons": ["Array of ImageResouces"]
         }
       ],
-      "ms-acn": {
+      "ms-ac": {
         "prefer": "medium",
         "small": "/widgets/data/todos-small.json",
         "medium": "/widgets/data/todos-medium.json",
