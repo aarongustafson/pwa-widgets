@@ -62,7 +62,7 @@ Data flow in a Templated Widget is largely managed in two ways:
 Here is an example of how this might look in the context of a Periodic Sync:
 
 <figure id="periodic-sync">
-<video src="media/sync.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/sync.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
 </figure>
 
 This video shows the following steps:
@@ -77,7 +77,7 @@ To show a more complicated set of examples, consider what should happen if certa
 Here’s how that might work:
 
 <figure id="user-logout">
-<video src="media/user-logout.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/user-logout.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
 </figure>
 
 This video shows:
@@ -88,7 +88,7 @@ This video shows:
 The next ste in this flow would be for the use to log back in. They could do that directly in the Client, but let’s use the `WidgetAction` provided in the previous step:
 
 <figure id="user-login">
-<video src="media/user-login.mp4" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/user-login.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
 </figure>
 
 This video shows:
@@ -212,6 +212,14 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 
 ## Widget-related Events
 
-TODO: Fill this in.
+There are a host of different events that will take place in the context of a Service Worker. For simplicity, all come through the `widgetClick` event listener.
+
+A `WidgetEvent` is an object with the following properties:
+
+* `action`: This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
+* `widget`: This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, including its `tag`, which would be used to update the widget use `showWidget()`.
+
+TODO: Flesh this out more
 
 [^1]: "In use" defined as user interaction + X minutes.
+ 
