@@ -62,7 +62,9 @@ Data flow in a Templated Widget is largely managed in two ways:
 Here is an example of how this might look in the context of a Periodic Sync:
 
 <figure id="periodic-sync">
-<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/sync.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+
+![](media/sync.gif)
+
 </figure>
 
 This video shows the following steps:
@@ -77,7 +79,9 @@ To show a more complicated set of examples, consider what should happen if certa
 Here’s how that might work:
 
 <figure id="user-logout">
-<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/user-logout.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+
+![](media/user-logout.gif)
+
 </figure>
 
 This video shows:
@@ -88,7 +92,9 @@ This video shows:
 The next ste in this flow would be for the use to log back in. They could do that directly in the Client, but let’s use the `WidgetAction` provided in the previous step:
 
 <figure id="user-login">
-<video src="https://github.com/aarongustafson/pwa-widgets/blob/main/media/user-login.mp4?raw=true" style="max-width: 100%; height: auto;" autoplay loop muted playsinline lazyload>
+
+![](media/user-login.gif)
+
 </figure>
 
 This video shows:
@@ -210,6 +216,27 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 }
 ```
 
+## Service Worker APIs
+
+This proposal introduces two new methods to the   `ServiceWorkerRegistration`:
+
+* `showWidget()`
+* `closeWidget()`
+
+### Showing a Widget
+
+Developers will use `showWidget()` to both create and update Widgets. The method takes two arguments:
+
+1. <var>tag</var> - This is the tag property and is used for identifying the widget that should be updated.
+2. <var>payload</var> - This is an object that provides the Widget Host with the necessary information for rendering the widget. The members are:
+    * `widget` - The `WidgetDefinition` from the Manifest and
+    * `data` - The data to flow into it.
+
+
+### Closing a Widget
+
+Developers will use `closeWidget()` to uninstall. The method takes one argument: the Widget’s `tag`.
+
 ## Widget-related Events
 
 There are a host of different events that will take place in the context of a Service Worker. For simplicity, all come through the `widgetClick` event listener.
@@ -217,9 +244,145 @@ There are a host of different events that will take place in the context of a Se
 A `WidgetEvent` is an object with the following properties:
 
 * `action`: This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
-* `widget`: This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, including its `tag`, which would be used to update the widget use `showWidget()`.
+* `widget`: This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its `tag`, which would be used to update the widget using `showWidget()`.
 
-TODO: Flesh this out more
+```js
+{
+  "action": "create-event",
+  "widget": {
+    "id": {{ System_UUID }},
+    "name": "Agenda",
+    "tag": "agenda",
+    "url": "/widgets/agenda/",
+    "type": "text/calendar",
+    "template": "agenda",
+    "data": "/widgets/data/agenda.ical",
+    "update": "900",
+    "icons": [ ],
+    "backgrounds": [ ],
+    "actions": [ ]
+  }
+}
+```
+
+You can see a basic example of this in use in [the user login video, above](user-login). There is a walkthrough of the interaction following that video, but here’s how the actual `WidgetEvent` could be handled:
+
+```js
+self.addEventListener('widgetclick', function(event) {
+
+  const action = event.action;
+
+  // If user is being prompted to login 
+  if ( action == "login" ) {
+    // open a new window to the login page
+    clients.openWindow( "/login?from=widget" );
+  }
+
+});
+```
+
+There are a few special `WidgetEvent` `action` types to consider as well. The first two are pretty self-explanatory:
+
+* "install" - installs a single widget
+* "uninstall" - uninstalls a single widget
+
+Here is the flow for install:
+
+<figure id="periodic-sync">
+
+![](media/install.gif)
+
+</figure>
+
+1. An "install" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
+2. The Service Worker captures the Widget definition from the `widget` property and makes a `Request` for its `data` endpoint.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `showWidget()` method, using the `tag` as the first argument and an object containing the `widget` and the Response `data` as the second argument.
+
+Uninstall is similar:
+
+<figure id="periodic-sync">
+
+![](media/uninstall.gif)
+
+</figure>
+
+1. An "uninstall" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
+2. The Service Worker runs any necessary cleanup steps (such as unregistering a Periodic Sync).
+3. The Service Worker then prompts the Widget Host to remove the Widget using `closeWidget()`, passing in the `tag`.
+
+
+The final special event case is the "resume" event. Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "resume" event. Unlike "install" and "uninstall," the "resume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.
+
+<figure id="periodic-sync">
+
+![](media/resume.gif)
+
+</figure>
+
+Here is how each of these events could be handled in the Service Worker:
+
+```js
+self.addEventListener('widgetclick', function(event) {
+
+  const action = event.action;
+  const widget = event.widget;
+
+  event.waitUntil(
+    // If a widget is being installed
+    switch action:
+      case "install":
+        console.log("installing", widget);
+        
+        // get the data needed
+        fetch( widget.data )
+          .then( response => {
+
+            // show the widget, passing in 
+            // the widget definition and data
+            self.showWidget( widget.tag, {
+              widget: widget,
+              data: response.body
+            });
+
+          });
+        return;
+      
+      case "uninstall":
+        console.log("uninstall", widget);
+        
+        // do any cleanup that’s needed
+        
+        // close the widget
+        self.closeWidget( widget.tag );
+        return;
+
+      case "resume":
+        console.log("resuming all widgets");
+
+        // refresh the data on each widget
+        clients
+          .matchAll({ type: "widget" })
+          .then(function(widgetList) {
+            for (let i = 0; i < widgetList.length; i++) {
+              var widget = clientList[i];
+              fetch( widget.data )
+                .then( response => {
+                  self.showWidget( widget.tag, {
+                    widget: widget,
+                    data: response.body
+                  });
+                });
+            }
+          });
+
+        return;
+      
+      // other cases
+    }
+  );
+
+});
+```
 
 [^1]: "In use" defined as user interaction + X minutes.
  
