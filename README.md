@@ -148,7 +148,7 @@ One or more Widgets are defined within the `widgets` member of a Web App Manifes
   "type": "text/calendar",
   "template": "agenda",
   "data": "/widgets/data/agenda.ical",
-  "update": "900",
+  "update": 900,
   "icons": [ ],
   "backgrounds": [ ],
   "actions": [ ]
@@ -218,24 +218,72 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 
 ## Service Worker APIs
 
-This proposal introduces two new methods to the   `ServiceWorkerRegistration`:
+This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope`](https://www.w3.org/TR/service-workers/#serviceworkerglobalscope-interface). This attribute references the `Widgets` interface (which is analogous to `Clients`) that exposes the following:
 
-* `showWidget()`
-* `closeWidget()`
+* `get()` - Requires an <var>id</var> argument that matches the internal `id` of a Widget. Returns a Promise that resolves to a `WidgetInstance` or *undefined*.
+* `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of `WidgetInstance` objects, regardless of their status, or an empty array.
+* `show()` - Returns a Promise that resolves to  *undefined*.
+
+### The `WidgetInstance` Object
+
+Each Widget is represented within the `Widgets` interface as a `WidgetInstance`. Each Widget’s representation includes the original `WidgetDefinition` (as `definition`), but is mainly focused on providing details on the Widget’s current state and enables easier interaction with the Widget Host:
+
+```js
+{
+  "id": {{ GUID }},
+  "tag": "agenda",
+  "installable": true,
+  "hosts": [ ],
+  "updated": {{ Date() }},
+  "definition": { },
+  "current": { 
+    "name": "Agenda",
+    "data": "Last data supplied to the widget, as a string",
+    "actions": [ ],
+    "icons": [ ],
+    "backgrounds": [ ],
+    "theme_color": "CSS Color",
+    "background_color": "CSS Color"
+  }
+}
+```
+
+All properties are Read Only to developers and are updated by the implementation as appropriate.
+
+* `id` - String. The GUID used to reference the Widget by the implementor.
+* `tag` - String. The `tag` used to reference the Widget.
+* `installable` - Boolean. Indicates whether the Widget is installable (based on Widget type and/or data format).
+* `hosts` - Array. Array of strings that are internal pointers to Widget Host(s) (if any) that have requested to install of this Widget.
+* `updated` - Date. Timestamp for the last time data was piped to the Widget.
+* `definition` - Object. The original, unaltered, `WidgetDefinition` provided by the Manifest. Includes any [proprietary extensions](#Extensibility)).
+* `current` Object. Represents the current state of the widget (from the perspective of the Service Worker). `null` if `active` is `false`.
+  * `name` - String. The current name displayed in the Widget.
+  * `data` - String. The last data sent to the Widget Host (via `show()`).
+  * `actions` - Array. Array of current `actions` provided for the Widget (if any).
+  * `icons` - Array. Array of current `icons` provided for the Widget.
+  * `backgrounds` - Array. Array of current background images provided for Widget rendering.
+  * `theme_color` - String. CSS color provided for use as an accent color in Widget rendering.
+  * `background_color` - String. CSS color provided for use as a background color in Widget rendering.
+
+### Options for Matching
+
+The `matchAll` method is analogous to `clients.matchAll()`, but is limited in scope to only "widget" type clients. It also allows developers ot limit the scope of matches based on any of the following:
+
+* `installable: true` - Only matches Widgets supported by a Widget Host on this device.
+* `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of the `hosts` array).
+
+#### New `ClientType`
+
+Widgets should be a part of the `Clients` interface. As such, a new [ClientType](https://w3c.github.io/ServiceWorker/#ref-for-enumdef-clienttype) of "widget" would need to be defined.
 
 ### Showing a Widget
 
-Developers will use `showWidget()` to both create and update Widgets. The method takes two arguments:
+Developers will use `widgets.show()` to both create and update Widgets. The method takes two arguments:
 
 1. <var>tag</var> - This is the tag property and is used for identifying the widget that should be updated.
 2. <var>payload</var> - This is an object that provides the Widget Host with the necessary information for rendering the widget. The members are:
-    * `widget` - The `WidgetDefinition` from the Manifest and
+    * `definition` - The `WidgetDefinition` from the Manifest
     * `data` - The data to flow into it.
-
-
-### Closing a Widget
-
-Developers will use `closeWidget()` to uninstall. The method takes one argument: the Widget’s `tag`.
 
 ## Widget-related Events
 
@@ -243,23 +291,17 @@ There are a host of different events that will take place in the context of a Se
 
 A `WidgetEvent` is an object with the following properties:
 
-* `action`: This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
-* `widget`: This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its `tag`, which would be used to update the widget using `showWidget()`.
+* `host` - This is the GUID for the host (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
+* `action` - This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
+* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its `tag`, which would be used to update the widget using `show()`.
 
 ```js
 {
+  "host": {{ System_UUID }},
   "action": "create-event",
   "widget": {
     "id": {{ System_UUID }},
-    "name": "Agenda",
     "tag": "agenda",
-    "url": "/widgets/agenda/",
-    "type": "text/calendar",
-    "template": "agenda",
-    "data": "/widgets/data/agenda.ical",
-    "update": "900",
-    "icons": [ ],
-    "backgrounds": [ ],
     "actions": [ ]
   }
 }
@@ -295,8 +337,12 @@ Here is the flow for install:
 </figure>
 
 1. An "install" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
-2. The Service Worker captures the Widget definition from the `widget` property and makes a `Request` for its `data` endpoint.
-3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `showWidget()` method, using the `tag` as the first argument and an object containing the `widget` and the Response `data` as the second argument.
+2. The Service Worker
+    a. captures the Widget `tag` from the `widget` property,
+    b. looks up the Widget via `widgets.matchAll()`, and
+    c. makes a `Request` for its `data` endpoint.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `show()` method, using the `tag` as the first argument and an object containing the `widget` and the Response `data` as the second argument.
+4. Internally, the `host` value gets pushed into the `hosts` value of the corresponding `WidgetDefinition`.
 
 Uninstall is similar:
 
@@ -307,9 +353,8 @@ Uninstall is similar:
 </figure>
 
 1. An "uninstall" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
-2. The Service Worker runs any necessary cleanup steps (such as unregistering a Periodic Sync).
-3. The Service Worker then prompts the Widget Host to remove the Widget using `closeWidget()`, passing in the `tag`.
-
+2. Internally, the `host` value gets removed from the `hosts` value of the corresponding `WidgetDefinition`.
+3. The Service Worker runs any necessary cleanup steps (such as unregistering a Periodic Sync if the widget is no longer in use).
 
 The final special event case is the "resume" event. Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "resume" event. Unlike "install" and "uninstall," the "resume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.
 
@@ -325,9 +370,14 @@ Here is how each of these events could be handled in the Service Worker:
 self.addEventListener('widgetclick', function(event) {
 
   const action = event.action;
-  const widget = event.widget;
-
+  const tag = event.widget.tag;
+  
   event.waitUntil(
+    // get the widget
+    const widget = wigets
+                    .matchAll({ installable: true })
+                    .filter(widget =>  widget.tag == tag);
+
     // If a widget is being installed
     switch action:
       case "install":
@@ -339,7 +389,7 @@ self.addEventListener('widgetclick', function(event) {
 
             // show the widget, passing in 
             // the widget definition and data
-            self.showWidget( widget.tag, {
+            self.show( tag, {
               widget: widget,
               data: response.body
             });
@@ -352,14 +402,12 @@ self.addEventListener('widgetclick', function(event) {
         
         // do any cleanup that’s needed
         
-        // close the widget
-        self.closeWidget( widget.tag );
         return;
 
       case "resume":
         console.log("resuming all widgets");
 
-        // refresh the data on each widget
+        // refresh the data on each widget (using Clients, just to show it can be done)
         clients
           .matchAll({ type: "widget" })
           .then(function(widgetList) {
