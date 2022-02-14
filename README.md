@@ -52,6 +52,10 @@ For productivity apps:
 * task-item
 * task-list
 
+For auth-requiring Widgets:
+
+* login-prompt
+
 ### Data flow in a Templated Widget
 
 Data flow in a Templated Widget is largely managed in two ways:
@@ -148,6 +152,7 @@ One or more Widgets are defined within the `widgets` member of a Web App Manifes
   "type": "text/calendar",
   "template": "agenda",
   "data": "/widgets/data/agenda.ical",
+  "auth": true,
   "update": 900,
   "icons": [ ],
   "backgrounds": [ ],
@@ -178,6 +183,7 @@ A [Templated Widget](#Templated-Widgets) MUST include the following properties:
 
 A developer MAY define the following:
 
+* `auth` - boolean as to whether or not the Widget requires auth. False if not included.
 * `update` - the frequency (in seconds) a developer requests that the widget be updated; the actual update schedule will be at the discretion of the Widget Host, but will use the Service Worker’s Periodic Sync infrastructure. Effectively, this is a declarative way of defining a Periodic Sync event that makes a Request to the `data` URL and pushes it to the widget. When the widget is installed, the Periodic Sync would be created; when it is uninstalled, the event would be removed.
 * `icons` - an array of alternative icons to use in the context of this Widget; if undefined, the Widget icon will be the chosen icon from [the Manifest’s `icons` array](https://w3c.github.io/manifest/#icons-member).
 * `backgrounds` - an array of alternative background images (as [`ImageResource` objects](https://www.w3.org/TR/image-resource/)) that could be used in the template (if the Widget Host and template support background images).
@@ -256,7 +262,7 @@ All properties are Read Only to developers and are updated by the implementation
 * `hosts` - Array. Array of strings that are internal pointers to Widget Host(s) (if any) that have requested to install of this Widget.
 * `updated` - Date. Timestamp for the last time data was piped to the Widget.
 * `definition` - Object. The original, unaltered, `WidgetDefinition` provided by the Manifest. Includes any [proprietary extensions](#Extensibility)).
-* `current` Object. Represents the current state of the widget (from the perspective of the Service Worker). `null` if `active` is `false`.
+* `current` Object. Represents the current state of the widget (from the perspective of the Service Worker). `null` if `hosts` is empty.
   * `name` - String. The current name displayed in the Widget.
   * `data` - String. The last data sent to the Widget Host (via `show()`).
   * `actions` - Array. Array of current `actions` provided for the Widget (if any).
