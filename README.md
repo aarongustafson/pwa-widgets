@@ -2,6 +2,8 @@
 
 Playing with some ideas around widget definitions for PWAs.
 
+**Note: These are my own ideas and are not reflective of anything my employer may or may not do in the future. I am just doing some thinking around what Widgets could be like if we were able to connect them to a PWA.**
+
 ## The idea
 
 For the last few years, I’ve been thinking about the many ways native applications can expose information and/or focused tasks within operating systems. Examples of this include Android Home Screen Widgets, macOS Dashboard and Today Panel Widgets, the Apple Touch Bar, Samsung Daily Cards, Mini App Widgets, smart watch app companions, and so on. When building Progressive Web Apps, it would useful to be able to project aspects of the web app onto these surfaces (originally I’d considered these "projections" but most systems do call them "widgets," so I opted to go with the flow).
