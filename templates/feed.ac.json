@@ -1,0 +1,56 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.5",
+  "sample_data": {
+    "name": "Sample JSON Feed",
+    "type": "application/json",
+    "url": "https://www.aaron-gustafson.com/feeds/latest-posts.json"
+  },
+  "body": [
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "[${title}](${home_page_url})",
+          "wrap": true
+        },
+        {
+          "$data": "${items}",
+          "type": "Container",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "[${title}](${url})",
+              "wrap": true,
+              "style": "heading"
+            },
+            {
+              "type": "TextBlock",
+              "text": "${summary}",
+              "wrap": true
+            },
+            {
+              "type": "ColumnSet",
+              "columns": [
+                {
+                  "$data": "${tags}",
+                  "type": "Column",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "${$data}",
+                      "isSubtle": true
+                    }
+                  ],
+                  "width": "auto"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
