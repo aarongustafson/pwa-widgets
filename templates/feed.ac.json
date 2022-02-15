@@ -12,12 +12,7 @@
       "type": "Container",
       "items": [
         {
-          "type": "TextBlock",
-          "text": "[${title}](${home_page_url})",
-          "wrap": true
-        },
-        {
-          "$data": "${items}",
+          "$data": "${take(items,5)}",
           "type": "Container",
           "items": [
             {
