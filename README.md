@@ -457,7 +457,7 @@ self.addEventListener('widgetclick', function(event) {
           });
         return;
       
-      case "WidgetIUninstall":
+      case "WidgetUninstall":
         console.log("uninstall", widget);
         
         // do any cleanup that’s needed
