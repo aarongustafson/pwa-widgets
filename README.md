@@ -158,7 +158,8 @@ One or more Widgets are defined within the `widgets` member of a Web App Manifes
   "update": 900,
   "icons": [ ],
   "backgrounds": [ ],
-  "actions": [ ]
+  "actions": [ ],
+  "settings": [ ]
 }
 ```
 
@@ -190,6 +191,7 @@ A developer MAY define the following:
 * `icons` - an array of alternative icons to use in the context of this Widget; if undefined, the Widget icon will be the chosen icon from [the Manifest’s `icons` array](https://w3c.github.io/manifest/#icons-member).
 * `backgrounds` - an array of alternative background images (as [`ImageResource` objects](https://www.w3.org/TR/image-resource/)) that could be used in the template (if the Widget Host and template support background images).
 * `actions` - An array of [`WidgetAction` objects](#Defining-a-WidgetAction) that trigger an event within the origin’s Service Worker
+* `settings` - A array of [`WidgetSetting` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
 
 A Widget Host’s templates may also, at their discretion, make use of a Manifest’s [`theme_color`](https://w3c.github.io/manifest/#theme_color-member) and [`background_color`](https://w3c.github.io/manifest/#background_color-member), if they are defined.
 
@@ -209,76 +211,103 @@ The `action` and `title` properties are required. The `icons` array is optional 
 
 When activated, a `WidgetAction` will dispatch a [`WidgetEvent`](#WidgetEvent) (modeled on [`NotificationEvent`](https://notifications.spec.whatwg.org/#example-50e7c86c)) within its Service Worker. Within the Service Worker, the event will contain a payload that includes a reference to the Widget itself and the `action` value.
 
+### Defining a `WidgetSetting`
+
+A `WidgetSetting` defines a single field for use in a widget’s setting panel.
+
+```json
+{
+  "label": "Where do you want to display weather for?",
+  "name": "locale",
+  "description": "Just start typing and we’ll give you some options",
+  "type": "autocomplete",
+  "options": "/path/to/options.json?q={{ value }}",
+  "default": "Seattle, WA USA"
+}
+```
+
+Breaking this down:
+
+* `label` is the visible text shown to the end user and acts as the accessible label for the field.
+* `name` is the internal variable name used for the field (and is the key that will be sent back to the PWA).
+* `description` is the _optional_ accessible description for a field, used to provide additional details/context.
+* `type` is the field type that should be used. Support for the following field types are recommended:
+  * Basic text field types: "text" || "email" || "password" || "tel" || "url" || "number"
+  * One of many selection (requires `options`): "boolean" || "radio" || "select"
+  * Many of many selection (requires `options`): "checkbox"
+  * Temporal: "date" || "datetime"
+  * Other: "file" || "color" || "range"
+  * Auto-complete (requires `options`): "autocomplete"
+* `options` is used for specific field `type`s noted above. It can be either an array of options for the field or a URL string referencing an endpoint expected to return an array of values. If the list is dynamic (as in the case of an autocomplete field), the URL endpoint may be passed the current `value` of the field via the reference "{{ value }}".
+* `default` is the _optional_ default value for the setting.
+
 ### Extensibility
 
 We recognize that some widget platforms may allow developers to further refine a Widget’s appearance and/or functionality within their system. We recommend that those platforms use [the extensibility of the Manifest](https://www.w3.org/TR/appmanifest/#extensibility) to allow developers to encode their widgets with this additional information, if they so choose.
 
-For example, if using something like [Microsoft’s Adaptive Cards](https://docs.microsoft.com/en-us/adaptive-cards/templating/) for rendeing, a Widget Host might consider adding something like the following to the `WidgetDefinition`:
+For example, if using something like [Microsoft’s Adaptive Cards](https://docs.microsoft.com/en-us/adaptive-cards/templating/) for rendering, a Widget Host might consider adding something like the following to the `WidgetDefinition`:
 
 ```json
-"ms-ac": {
-  "prefer": "medium",
-  "small": "/widgets/data/agenda-ac-small.json",
-  "medium": "/widgets/data/agenda-ac-medium.json",
-  "large": "/widgets/data/agenda-acnlarge.json"
-}
+"ms-ac-template": "/widgets/templates/agenda.ac.json",
 ```
 
 ## Service Worker APIs
 
 This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope`](https://www.w3.org/TR/service-workers/#serviceworkerglobalscope-interface). This attribute references the `Widgets` interface (which is analogous to `Clients`) that exposes the following:
 
-* `get()` - Requires an <var>id</var> argument that matches the internal `id` of a Widget. Returns a Promise that resolves to a `WidgetInstance` or *undefined*.
-* `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of `WidgetInstance` objects, regardless of their status, or an empty array.
+* `get()` - Requires an <var>id</var> argument that matches the internal `id` of a Widget. Returns a Promise that resolves to a `Widget` or *undefined*.
+* `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of `Widget` objects, regardless of their status, or an empty array.
 * `show()` - Returns a Promise that resolves to  *undefined*.
 
-### The `WidgetInstance` Object
+### The `Widget` Object
 
-Each Widget is represented within the `Widgets` interface as a `WidgetInstance`. Each Widget’s representation includes the original `WidgetDefinition` (as `definition`), but is mainly focused on providing details on the Widget’s current state and enables easier interaction with the Widget Host:
+Each Widget is represented within the `Widgets` interface as a `Widget`. Each Widget’s representation includes the original `WidgetDefinition` (as `definition`), but is mainly focused on providing details on the Widget’s current state and enables easier interaction with the Widget Host(s):
 
 ```js
 {
-  "id": {{ GUID }},
   "tag": "agenda",
   "installable": true,
-  "hosts": [ ],
-  "updated": {{ Date() }},
+  "hasSettings": false,
   "definition": { },
-  "current": { 
-    "name": "Agenda",
-    "data": "Last data supplied to the widget, as a string",
-    "actions": [ ],
-    "icons": [ ],
-    "backgrounds": [ ],
-    "theme_color": "CSS Color",
-    "background_color": "CSS Color"
-  }
+  "instances": [ ]
 }
 ```
 
 All properties are Read Only to developers and are updated by the implementation as appropriate.
 
-* `id` - String. The GUID used to reference the Widget by the implementor.
 * `tag` - String. The `tag` used to reference the Widget.
 * `installable` - Boolean. Indicates whether the Widget is installable (based on Widget type and/or data format).
-* `hosts` - Array. Array of strings that are internal pointers to Widget Host(s) (if any) that have requested to install of this Widget.
-* `updated` - Date. Timestamp for the last time data was piped to the Widget.
+* `hasSettings` - Boolean. Indicates whether the `WidgetDefinition` includes a non-empty `settings` array.
 * `definition` - Object. The original, unaltered, `WidgetDefinition` provided by the Manifest. Includes any [proprietary extensions](#Extensibility)).
-* `current` Object. Represents the current state of the widget (from the perspective of the Service Worker). `null` if `hosts` is empty.
-  * `name` - String. The current name displayed in the Widget.
-  * `data` - String. The last data sent to the Widget Host (via `show()`).
-  * `actions` - Array. Array of current `actions` provided for the Widget (if any).
-  * `icons` - Array. Array of current `icons` provided for the Widget.
-  * `backgrounds` - Array. Array of current background images provided for Widget rendering.
-  * `theme_color` - String. CSS color provided for use as an accent color in Widget rendering.
-  * `background_color` - String. CSS color provided for use as a background color in Widget rendering.
+* `instances` Array of `WidgetInstance` objects. Represents the current state of each instance of a widget (from the perspective of the Service Worker). Empty if the widget has not been installed.
+
+### The `WidgetInstance` Object
+
+```js
+{ 
+  "id": {{ GUID }},
+  "host": {{ GUID }},
+  "settings": { },
+  "updated": {{ Date() }},
+  "payload": { }
+}
+```
+
+All properties are Read Only to developers and are updated by the implementation as appropriate.
+
+* `id` - String. The GUID used to reference the `WidgetInstance` by the implementor.
+* `host` - String. Internal pointer to the Widget Host that has installed this `WidgetInstance`.
+* `settings` - Object. If the Widget has settings, the key/values pairs set for this instance are enumerated here.
+* `updated` - Date. Timestamp for the last time data was sent to the `WidgetInstance` (via `show()`).
+* `payload` - Object. The last payload sent to this `WidgetInstance` (via `show()`).
 
 ### Options for Matching
 
-The `matchAll` method is analogous to `clients.matchAll()`, but is limited in scope to only "widget" type clients. It also allows developers ot limit the scope of matches based on any of the following:
+The `matchAll` method is analogous to `clients.matchAll()`, but is limited in scope to only "widget" type clients. It also allows developers to limit the scope of matches based on any of the following:
 
+* `tag: tagname` - Only matches a Widget that has the <var>tagname</var> `tag`.
 * `installable: true` - Only matches Widgets supported by a Widget Host on this device.
-* `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of the `hosts` array).
+* `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of each Widget’s `instances` array).
 
 #### New `ClientType`
 
@@ -286,12 +315,13 @@ Widgets should be a part of the `Clients` interface. As such, a new [ClientType]
 
 ### Showing a Widget
 
-Developers will use `widgets.show()` to both create and update Widgets. The method takes two arguments:
+Developers will use `widgets.show()` to both create and update Widgets. The method takes one argument, <var>payload</var> which is an object that provides the Widget Host with the necessary information for rendering the widget. The members are:
 
-1. <var>tag</var> - This is the tag property and is used for identifying the widget that should be updated.
-2. <var>payload</var> - This is an object that provides the Widget Host with the necessary information for rendering the widget. The members are:
-    * `definition` - The `WidgetDefinition` from the Manifest
-    * `data` - The data to flow into it.
+* `definition` - Object. The `WidgetDefinition` for the Widget.
+* `data` - Object. The data to flow into it.
+* `instance` - Object. Optional. The `instance` to create/update.
+* `tag` - String. Optional. Used to update all instances of a Widget.
+* `host` - String. Optional. Used to target a specific Widget Host.
 
 ## Widget-related Events
 
@@ -301,21 +331,24 @@ A `WidgetEvent` is an object with the following properties:
 
 * `host` - This is the GUID for the host (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
 * `action` - This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
-* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its `tag`, which would be used to update the widget using `show()`.
+* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which would be used to update the widget using `show()` or save its settings using `saveSettings()`.
+* `data` - This object comprises key/value pairs representing data sent from the Widget Host as part of the event.
+
 
 ```js
 {
-  "host": {{ System_UUID }},
+  "host": {{ GUID }},
   "action": "create-event",
   "widget": {
-    "id": {{ System_UUID }},
+    "id": {{ GUID }},
     "tag": "agenda",
     "actions": [ ]
-  }
+  },
+  "data": { }
 }
 ```
 
-You can see a basic example of this in use in [the user login video, above](user-login). There is a walkthrough of the interaction following that video, but here’s how the actual `WidgetEvent` could be handled:
+You can see a basic example of this in use in [the user login video, above](user-login). There is a walk through of the interaction following that video, but here’s how the actual `WidgetEvent` could be handled:
 
 ```js
 self.addEventListener('widgetclick', function(event) {
@@ -331,10 +364,12 @@ self.addEventListener('widgetclick', function(event) {
 });
 ```
 
-There are a few special `WidgetEvent` `action` types to consider as well. The first two are pretty self-explanatory:
+There are a few special `WidgetEvent` `action` types to consider as well. 
 
-* "install" - installs a single widget
-* "uninstall" - uninstalls a single widget
+* "WidgetInstall" - Executed when a Widget Host is requesting installation of a widget.
+* "WidgetUninstall" - Executed when a Widget Host is requesting un-installation of a widget.
+* "WidgetSave" - Executed when a Widget has settings and the user saves the settings for a specific `WidgetInstance`.
+* "WidgetResume" - Executed when a Widget Host is switching from its inactive to active state.
 
 Here is the flow for install:
 
@@ -344,15 +379,15 @@ Here is the flow for install:
 
 </figure>
 
-1. An "install" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
+1. An "WidgetInstall" signal is received by the User Agent and is passed along to the Service Worker.
 2. The Service Worker
     a. captures the Widget `tag` from the `widget` property,
     b. looks up the Widget via `widgets.matchAll()`, and
     c. makes a `Request` for its `data` endpoint.
-3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `show()` method, using the `tag` as the first argument and an object containing the `widget` and the Response `data` as the second argument.
-4. Internally, the `host` value gets pushed into the `hosts` value of the corresponding `WidgetDefinition`.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `show()` method.
+4. Internally, a new `WidgetInstance` is created — with default `settings` values, if `settings` are defined — and gets pushed into the `instances` array of the corresponding `Widget`.
 
-Uninstall is similar:
+The "uninstall" process is similar:
 
 <figure id="periodic-sync">
 
@@ -360,13 +395,23 @@ Uninstall is similar:
 
 </figure>
 
-1. An "uninstall" event is received by the Service Worker. This could originate from the Widget Host or directly from the User Agent.
-2. Internally, the `host` value gets removed from the `hosts` value of the corresponding `WidgetDefinition`.
-3. The Service Worker runs any necessary cleanup steps (such as unregistering a Periodic Sync if the widget is no longer in use).
+1. The "WidgetUninstall" signal is received by the User Agent.
+2. Internally, the `WidgetInstance` associated with the `host` value of the corresponding `WidgetDefinition` is deleted.
+3. If successful, the "WidgetUninstall" event is issued to the Service Worker.
+3. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
 
-The final special event case is the "resume" event. Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "resume" event. Unlike "install" and "uninstall," the "resume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.
+The "WidgetSave" process works like this:
 
-<figure id="periodic-sync">
+1. The "WidgetSave" signal is received by the User Agent.
+2. Internally, the `WidgetInstance` matching the `widget.id` value and `host` is examined to see if
+    a. it has settings and
+    b. its `settings` object matches the inbound `data`.
+3. If it has settings and the two do not match, the new data is saved to the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
+4. The Service Worker receives the event and can react by issuing a request for new data, based on the updated settings values.
+
+The final special event is "WidgetResume." Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.
+
+<figure id="resume">
 
 ![](media/resume.gif)
 
@@ -379,16 +424,21 @@ self.addEventListener('widgetclick', function(event) {
 
   const action = event.action;
   const tag = event.widget.tag;
+  const id = event.widget.id;
+  const host = event.host;
   
   event.waitUntil(
-    // get the widget
+    // get the Widget
     const widget = wigets
-                    .matchAll({ installable: true })
-                    .filter(widget =>  widget.tag == tag);
+                    .matchAll({ tag: tag });
 
+    // Get the instance
+    const instance = widget.instances
+                       .filter(instance => instance.id == id);
+    
     // If a widget is being installed
     switch action:
-      case "install":
+      case "WidgetInstall":
         console.log("installing", widget);
         
         // get the data needed
@@ -397,22 +447,24 @@ self.addEventListener('widgetclick', function(event) {
 
             // show the widget, passing in 
             // the widget definition and data
-            self.show( tag, {
-              widget: widget,
+            widgets.show({
+              definition: widget.definition,
+              tag: tag,
+              host: host,
               data: response.body
             });
 
           });
         return;
       
-      case "uninstall":
+      case "WidgetIUninstall":
         console.log("uninstall", widget);
         
         // do any cleanup that’s needed
         
         return;
 
-      case "resume":
+      case "WidgetResume":
         console.log("resuming all widgets");
 
         // refresh the data on each widget (using Clients, just to show it can be done)
@@ -421,13 +473,37 @@ self.addEventListener('widgetclick', function(event) {
           .then(function(widgetList) {
             for (let i = 0; i < widgetList.length; i++) {
               var widget = clientList[i];
-              fetch( widget.data )
-                .then( response => {
-                  self.showWidget( widget.tag, {
-                    widget: widget,
-                    data: response.body
+              // Widgets with settings should be updated on a per-instance level
+              if ( widget.hasSettings )
+              {
+                widget.instances.map(instance => {
+                  let settings_data = new FormData();
+                  for ( let key in instance.settings ) {
+                    settings_data.append(key, instance.settings[key]);
+                  }
+                  fetch( widget.data, {
+                    method: "POST",
+                    body: settings_data
+                  })
+                  .then( response => {
+                    widgets.show({
+                      instance: instance.id,
+                      definition: widget.definition,
+                      data: response.body
+                    });
                   });
                 });
+              // other widgets can be updated en masse via their tags
+              } else {
+                fetch( widget.data )
+                  .then( response => {
+                    widgets.show({
+                      tag: widget.tag,
+                      definition: widget.definition,
+                      data: response.body
+                    });
+                  });
+              }
             }
           });
 
