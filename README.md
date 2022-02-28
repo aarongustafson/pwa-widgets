@@ -257,7 +257,7 @@ This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope
 
 * `get()` - Requires an <var>id</var> argument that matches the internal `id` of a Widget. Returns a Promise that resolves to a `Widget` or *undefined*.
 * `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of `Widget` objects, regardless of their status, or an empty array.
-* `show()` - Returns a Promise that resolves to  *undefined*.
+* `show()` - Returns a Promise that resolves to  *undefined* or Error.
 
 ### The `Widget` Object
 
@@ -323,6 +323,15 @@ Developers will use `widgets.show()` to both create and update Widgets. The meth
 * `tag` - String. Optional. Used to update all instances of a Widget.
 * `host` - String. Optional. Used to target a specific Widget Host.
 
+This method will resolve undefined if successful, but should throw a descriptive Error if one is encountered. For example:
+
+* "Widget Host not found"
+* "Widget template not supported"
+* "Widget instance not found"
+* "Data required by the template was not supplied."
+
+_Note: instead of resolving to undefined if successful, it could resolve with a widget instance id or a reference to the widget instance itself._
+
 ## Widget-related Events
 
 There are a host of different events that will take place in the context of a Service Worker. For simplicity, all come through the `widgetClick` event listener.
@@ -333,7 +342,6 @@ A `WidgetEvent` is an object with the following properties:
 * `action` - This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
 * `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which would be used to update the widget using `show()` or save its settings using `saveSettings()`.
 * `data` - This object comprises key/value pairs representing data sent from the Widget Host as part of the event.
-
 
 ```js
 {
@@ -373,13 +381,13 @@ There are a few special `WidgetEvent` `action` types to consider as well.
 
 Here is the flow for install:
 
-<figure id="periodic-sync">
+<figure id="install">
 
 ![](media/install.gif)
 
 </figure>
 
-1. An "WidgetInstall" signal is received by the User Agent and is passed along to the Service Worker.
+1. A "WidgetInstall" signal is received by the User Agent and is passed along to the Service Worker.
 2. The Service Worker
     a. captures the Widget `tag` from the `widget` property,
     b. looks up the Widget via `widgets.matchAll()`, and
@@ -389,7 +397,7 @@ Here is the flow for install:
 
 The "uninstall" process is similar:
 
-<figure id="periodic-sync">
+<figure id="uninstall">
 
 ![](media/uninstall.gif)
 
