@@ -379,13 +379,9 @@ There are a few special `WidgetEvent` `action` types to consider as well.
 * "WidgetSave" - Executed when a Widget has settings and the user saves the settings for a specific `WidgetInstance`.
 * "WidgetResume" - Executed when a Widget Host is switching from its inactive to active state.
 
-Here is the flow for install:
-
-<figure id="install">
+<p id="install">Here is the flow for install:</p>
 
 ![](media/install.gif)
-
-</figure>
 
 1. A "WidgetInstall" signal is received by the User Agent and is passed along to the Service Worker.
 2. The Service Worker
@@ -395,20 +391,16 @@ Here is the flow for install:
 3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `show()` method.
 4. Internally, a new `WidgetInstance` is created — with default `settings` values, if `settings` are defined — and gets pushed into the `instances` array of the corresponding `Widget`.
 
-The "uninstall" process is similar:
-
-<figure id="uninstall">
+<p id="uninstall">The "uninstall" process is similar:</p>
 
 ![](media/uninstall.gif)
-
-</figure>
 
 1. The "WidgetUninstall" signal is received by the User Agent.
 2. Internally, the `WidgetInstance` associated with the `host` value of the corresponding `WidgetDefinition` is deleted.
 3. If successful, the "WidgetUninstall" event is issued to the Service Worker.
 3. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
 
-The "WidgetSave" process works like this:
+<p id="save">The "WidgetSave" process works like this:</p>
 
 1. The "WidgetSave" signal is received by the User Agent.
 2. Internally, the `WidgetInstance` matching the `widget.id` value and `host` is examined to see if
@@ -417,13 +409,9 @@ The "WidgetSave" process works like this:
 3. If it has settings and the two do not match, the new data is saved to the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
 4. The Service Worker receives the event and can react by issuing a request for new data, based on the updated settings values.
 
-The final special event is "WidgetResume." Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.
-
-<figure id="resume">
+<p id="resume">The final special event is "WidgetResume." Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.</p>
 
 ![](media/resume.gif)
-
-</figure>
 
 Here is how each of these events could be handled in the Service Worker:
 
