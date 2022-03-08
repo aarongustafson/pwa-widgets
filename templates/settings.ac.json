@@ -86,9 +86,9 @@
               "label": "${label}",
               "placeholder": "${if(placeholder, placeholder, '')}",
               "id": "${name}",
-              "value": "${if( value, value, if( default, default, ''))}",
-              "min": "${if( min, min, '')}",
-              "max": "${if( max, max, '')}"
+              "value": "${if( value, int(value), if( default, int(default), ''))}",
+              "min": "${if( min, int(min), '')}",
+              "max": "${if( max, int(max), '')}"
             },
             {
               "type": "Input.Date",
