@@ -15,16 +15,52 @@ Here are a few use cases:
 * A calendar service could provide a daily agenda at a glance.
 * A music identification service could have a button widget that, when clicked, would access the microphone and attempt to ID the currently playing song.
 
-It’s expected that each Widget Host will provide different opportunities and have different constraints that depend on a variety of factors including memory use and power management. As such, this proposal outlines a means of defining two alternative approaches within the same Widget definition (`WidgetDefinition`) that would accommodate both scenarios:
+It’s expected that each <a href="#dfn-widget-host">Widget Host</a> will provide different opportunities and have different constraints that depend on a variety of factors including memory use and power management. As such, this proposal outlines a means of defining two alternative approaches within the same Widget definition (`WidgetDefinition`) that would accommodate both scenarios:
 
 1. [Templated Widgets](#Templated-Widgets)
 2. [Rich Widgets](#Rich-Widgets)
 
 Under this proposal, developers would be free to define Widgets that support both approaches or only one. In supporting only one, they should be aware that choosing a single path may limit the distribution/install-ability of that Widget.
 
+## Definitions
+
+Nouns:
+
+<dl>
+  <dt id="dfn-widget">Widget</dt>
+  <dd>A discrete user experience that represents a part of a website or app’s functionality. Refers to the prototypical definition of an experience (e.g., follow an account), *not* the <a href="#dfn-widget-instance">individual representations of this widget</a> (e.g., follow bob) that exist in a <a href="#dfn-widget-host">Widget Host</a>.</dd>
+  <dt id="dfn-widget-host">Widget Host</dt>
+  <dd>A container that manages and renders widgets.</dd>
+  <dt id="dfn-widget-instance">Widget Instance</dt>
+  <dd>The interactive experience of a <a href="#dfn-widget">Widget</a> within a <a href="#dfn-widget-host">Widget Host</a>. Multiple instances of a Widget may exist within a <a href="#dfn-widget-host">Widget Host</a>. These distinct instances may have associated <a href="#dfn-widget-settings">settings</a>.</dd>
+  <dt id="dfn-widget-settings">Widget Settings</dt>
+  <dd>Configuration options, defined on a <a href="#dfn-widget">Widget</a> and unique to a <a href="#dfn-widget-instance">Widget Instance</a>, that enable that instance to be customized.</dd>
+  <dt id="dfn-widget-provider">Widget Provider</dt>
+  <dd>An application that exposes Widgets. A browser would likely be the Widget Provider on behalf of its PWAs and would act as the proxy between those PWAs and any <a href="#dfn-widget-service">Widget Service</a>.</dd>
+  <dt id="dfn-widget-registry">Widget Registry</dt>
+  <dd>The list of <a href="#dfn-install">installable</a> <a href="#dfn-widget">Widgets</a> <a href="#dfn-register">registered</a> by <a href="#dfn-widget-provider">Widget Providers</a>.</dd>
+  <dt id="dfn-widget-service">Widget Service</dt>
+  <dd>Manages communications between <a href="#dfn-widget-host">Widget Hosts</a> and <a href="#dfn-widget-provider">Widget Providers</a>.</dd>
+</dl>
+
+Verbs:
+
+<dl>
+  <dt id="dfn-install">Install</dt>
+  <dt id="dfn-instantiate">Instantiate</dt>
+  <dd>Create a <a href="#dfn-widget-instance">Widget Instance</a>.</dd>
+  <dt id="dfn-register">Register</dt>
+  <dd>Add a <a href="#dfn-widget">Widget</a> to the <a href="#dfn-widget-registry">Widget Registry</a>.</dd>
+  <dt id="dfn-uninstall">Uninstall</dt>
+  <dd>Destroy a <a href="#dfn-widget-instance">Widget Instance</a>.</dd>
+  <dt id="dfn-unregister">Unregister</dt>
+  <dd>Remove a <a href="#dfn-widget">Widget</a> from the <a href="#dfn-widget-registry">Widget Registry</a>.</dd>
+</dl>
+
+
 ## Templated Widgets
 
-In resource-limited scenarios, a Widget Host may choose to provide a set of built-in widget templates that are minimally-customizable by developers (similar to [the Notifications API](https://notifications.spec.whatwg.org/#lifetime-and-ui-integrations)) through use of the PWA’s `icons`, `theme_color`, `background_color`, and so on. Examples include an agenda, calendar, mailbox, and a task list. The full list of available templates will likely vary by Widget Host. This proposal suggests [list of widgets template types](#Suggested-template-types) as a reasonable starting point.
+In resource-limited scenarios, a <a href="#dfn-widget-host">Widget Host</a> may choose to provide a set of built-in widget templates that are minimally-customizable by developers (similar to [the Notifications API](https://notifications.spec.whatwg.org/#lifetime-and-ui-integrations)) through use of the PWA’s `icons`, `theme_color`, `background_color`, and so on. Examples include an agenda, calendar, mailbox, and a task list. The full list of available templates will likely vary by <a href="#dfn-widget-host">Widget Host</a>. This proposal suggests [list of widgets template types](#Suggested-template-types) as a reasonable starting point.
 
 Templated Widgets support user interaction through one or more [developer-defined `WidgetAction` objects](#Defining-a-WidgetAction)s, which are analogous to a [`NotificationAction`](https://notifications.spec.whatwg.org/#dictdef-notificationaction).
 
@@ -62,7 +98,7 @@ For auth-requiring Widgets:
 
 Data flow in a Templated Widget is largely managed in two ways:
 
-1. Data flows from the Service Worker to a Widget via the `showWidget()` method.
+1. Data flows from the Service Worker to a Widget instance via the `updateWidget()` method.
 2. Data (in the form of interaction) flows from the Widget to the Service Worker via a `WidgetEvent` `tag`-ed to the specific Widget.
 
 Here is an example of how this might look in the context of a Periodic Sync:
@@ -95,7 +131,7 @@ This video shows:
 1. The user logging out from the context of a Client. When that happens, the Client, sends a `postMessage()` to the Service Worker, alerting it to the state change in the app.
 2. The Service Worker maintains a list of active Widgets and is aware of which ones require authentication. Knowing it’s been revoked, it pushes a new template to each auth-requiring Widget with a notice and a button to prompt the user to log in again.
 
-The next ste in this flow would be for the use to log back in. They could do that directly in the Client, but let’s use the `WidgetAction` provided in the previous step:
+The next step in this flow would be for the use to log back in. They could do that directly in the Client, but let’s use the `WidgetAction` provided in the previous step:
 
 <figure id="user-login">
 
@@ -117,7 +153,7 @@ You can see more examples in [the `WidgetEvent` section](#Widget-related-Events)
 
 There are instances in which a templated widget is incapable of accomplishing the goal of a widget (e.g., turning on the microphone to identify the song that’s playing, frequently updating to display an accurate clock). For those instances, developers will a lot more control. This is where Rich Widgets come in. Rich Widgets are wholly developer managed at a URL they control.
 
-As fully-rendered web pages (analogous to an `iframe`), Rich Widgets need to come with some restrictions that protect user privacy and limit stress on system resources. Each Widget Host will likely have its own set of restrictions for Rich Widgets (if it even allows them). These will likely include:
+As fully-rendered web pages (analogous to an `iframe`), Rich Widgets need to come with some restrictions that protect user privacy and limit stress on system resources. Each <a href="#dfn-widget-host">Widget Host</a> will likely have its own set of restrictions for Rich Widgets (if it even allows them). These will likely include:
 
 1. Limited RAM footprint - *recommendation TBD*,
 2. Limited JavaScript execution time - *recommendation TBD*,
@@ -125,15 +161,15 @@ As fully-rendered web pages (analogous to an `iframe`), Rich Widgets need to com
 4. Initiating any multimedia playback requires user interaction (though "piggybacking" on pre-existing multimedia playback initiated from within the same origin would not be similarly restricted), and
 5. Data updates must be performed by the Service Worker.
 
-Additionally, the Widget Host will likely reserve the right to suspend a widget at any time. Looking at how many renderers handle suspension, it’s likely that many Widget Hosts will create a bitmap representation of a Widget in its last-known state. The origin’s Service Worker may periodically request to update the Widget (and create a new snapshot) when it’s not in use.[^1] For more on this, consult the [events section](#Events).
+Additionally, the <a href="#dfn-widget-host">Widget Host</a> will likely reserve the right to suspend a widget at any time. Looking at how many renderers handle suspension, it’s likely that many <a href="#dfn-widget-host">Widget Hosts</a> will create a bitmap representation of a Widget in its last-known state. The origin’s Service Worker may periodically request to update the Widget (and create a new snapshot) when it’s not in use.[^1] For more on this, consult the [events section](#Events).
 
-Given that the web is responsive, a Rich Widget’s dimensions should not matter much. The content would merely adapt to the available real estate. Some Widget Hosts may even support user resizing of a Widget.
+Given that the web is responsive, a Rich Widget’s dimensions should not matter much. The content would merely adapt to the available real estate. Some <a href="#dfn-widget-host">Widget Hosts</a> may even support user resizing of a Widget.
 
 ### Caveats
 
 Rich Widgets must exist within [the scope of the Manifest](https://www.w3.org/TR/appmanifest/#scope-member) in which they are defined.
 
-A Widget’s network connection and update cycle is governed by a [Service Worker that applies to its scope](https://www.w3.org/TR/service-workers/#service-worker-registration-scope) and executes at the Widget Host’s (and/or OS’) discretion.
+A Widget’s network connection and update cycle is governed by a [Service Worker that applies to its scope](https://www.w3.org/TR/service-workers/#service-worker-registration-scope) and executes at the <a href="#dfn-widget-host">Widget Host</a>’s (and/or OS’) discretion.
 
 ## Internationalization
 
@@ -182,18 +218,24 @@ A [Templated Widget](#Templated-Widgets) MUST include the following properties:
 
 * `data` - the `URL` where the data for the widget can be found; if the format is unsupported, the widget would not be offered.
 * `type` - the MIME type of the data feed for the widget; if unsupported, the widget would not be offered.
-* `template` - the template the developer would like the Widget Host to use; if unsupported, the host may offer an analogous widget experience (determined using the `type` value) or the widget would not be offered.
+* `template` - the template the developer would like the <a href="#dfn-widget-host">Widget Host</a> to use; if unsupported, the host may offer an analogous widget experience (determined using the `type` value) or the widget would not be offered.
 
-A developer MAY define the following:
+A developer MAY define the following display-related properties:
 
-* `auth` - boolean as to whether or not the Widget requires auth. False if not included.
-* `update` - the frequency (in seconds) a developer requests that the widget be updated; the actual update schedule will be at the discretion of the Widget Host, but will use the Service Worker’s Periodic Sync infrastructure. Effectively, this is a declarative way of defining a Periodic Sync event that makes a Request to the `data` URL and pushes it to the widget. When the widget is installed, the Periodic Sync would be created; when it is uninstalled, the event would be removed.
 * `icons` - an array of alternative icons to use in the context of this Widget; if undefined, the Widget icon will be the chosen icon from [the Manifest’s `icons` array](https://w3c.github.io/manifest/#icons-member).
-* `backgrounds` - an array of alternative background images (as [`ImageResource` objects](https://www.w3.org/TR/image-resource/)) that could be used in the template (if the Widget Host and template support background images).
-* `actions` - An array of [`WidgetAction` objects](#Defining-a-WidgetAction) that trigger an event within the origin’s Service Worker
-* `settings` - A array of [`WidgetSetting` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
+* `backgrounds` - an array of alternative background images (as [`ImageResource` objects](https://www.w3.org/TR/image-resource/)) that could be used in the template (if the <a href="#dfn-widget-host">Widget Host</a> and template support background images).
 
-A Widget Host’s templates may also, at their discretion, make use of a Manifest’s [`theme_color`](https://w3c.github.io/manifest/#theme_color-member) and [`background_color`](https://w3c.github.io/manifest/#background_color-member), if they are defined.
+A Manifest’s [`theme_color`](https://w3c.github.io/manifest/#theme_color-member) and [`background_color`](https://w3c.github.io/manifest/#background_color-member), if defined, may also be provided alongside this data.
+
+A developer MAY define the following UI-related properties:
+
+* `actions` - An array of [`WidgetAction` objects](#Defining-a-WidgetAction) that will be exposed to users (if the template supports them) and trigger an event within the origin’s Service Worker.
+* `settings` - A array of [`WidgetSetting` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently within a <a href="#dfn-widget-host">Widget Host</a> (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
+
+A developer MAY define the following informational properties as a means of decoupling widget-specific business logic from their Service Worker code:
+
+* `auth` - Boolean as to whether or not the Widget requires auth. False if not included.
+* `update` - the frequency (in seconds) a developer wishes for the widget to be updated; for use in registering a Periodic Sync. The actual update schedule will use the Service Worker’s Periodic Sync infrastructure.
 
 ### Defining a `WidgetAction`
 
@@ -245,7 +287,7 @@ Breaking this down:
 
 We recognize that some widget platforms may allow developers to further refine a Widget’s appearance and/or functionality within their system. We recommend that those platforms use [the extensibility of the Manifest](https://www.w3.org/TR/appmanifest/#extensibility) to allow developers to encode their widgets with this additional information, if they so choose.
 
-For example, if using something like [Microsoft’s Adaptive Cards](https://docs.microsoft.com/en-us/adaptive-cards/templating/) for rendering, a Widget Host might consider adding something like the following to the `WidgetDefinition`:
+For example, if using something like [Microsoft’s Adaptive Cards](https://docs.microsoft.com/en-us/adaptive-cards/templating/) for rendering, a <a href="#dfn-widget-host">Widget Host</a> might consider adding something like the following to the `WidgetDefinition`:
 
 ```json
 "ms-ac-template": "/widgets/templates/agenda.ac.json",
@@ -261,7 +303,7 @@ This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope
 
 ### The `Widget` Object
 
-Each Widget is represented within the `Widgets` interface as a `Widget`. Each Widget’s representation includes the original `WidgetDefinition` (as `definition`), but is mainly focused on providing details on the Widget’s current state and enables easier interaction with the Widget Host(s):
+Each Widget is represented within the `Widgets` interface as a `Widget`. Each Widget’s representation includes the original `WidgetDefinition` (as `definition`), but is mainly focused on providing details on the Widget’s current state and enables easier interaction with the <a href="#dfn-widget-host">Widget Host</a>(s):
 
 ```js
 {
@@ -296,7 +338,7 @@ All properties are Read Only to developers and are updated by the implementation
 All properties are Read Only to developers and are updated by the implementation as appropriate.
 
 * `id` - String. The GUID used to reference the `WidgetInstance` by the implementor.
-* `host` - String. Internal pointer to the Widget Host that has installed this `WidgetInstance`.
+* `host` - String. Internal pointer to the <a href="#dfn-widget-host">Widget Host</a> that has installed this `WidgetInstance`.
 * `settings` - Object. If the Widget has settings, the key/values pairs set for this instance are enumerated here.
 * `updated` - Date. Timestamp for the last time data was sent to the `WidgetInstance` (via `show()`).
 * `payload` - Object. The last payload sent to this `WidgetInstance` (via `show()`).
@@ -306,7 +348,7 @@ All properties are Read Only to developers and are updated by the implementation
 The `matchAll` method is analogous to `clients.matchAll()`, but is limited in scope to only "widget" type clients. It also allows developers to limit the scope of matches based on any of the following:
 
 * `tag: tagname` - Only matches a Widget that has the <var>tagname</var> `tag`.
-* `installable: true` - Only matches Widgets supported by a Widget Host on this device.
+* `installable: true` - Only matches Widgets supported by a <a href="#dfn-widget-host">Widget Host</a> on this device.
 * `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of each Widget’s `instances` array).
 
 #### New `ClientType`
@@ -315,13 +357,13 @@ Widgets should be a part of the `Clients` interface. As such, a new [ClientType]
 
 ### Showing a Widget
 
-Developers will use `widgets.show()` to both create and update Widgets. The method takes one argument, <var>payload</var> which is an object that provides the Widget Host with the necessary information for rendering the widget. The members are:
+Developers will use `widgets.show()` to both create and update Widgets. The method takes one argument, <var>payload</var> which is an object that provides the <a href="#dfn-widget-host">Widget Host</a> with the necessary information for rendering the widget. The members are:
 
 * `definition` - Object. The `WidgetDefinition` for the Widget.
 * `data` - Object. The data to flow into it.
 * `instance` - Object. Optional. The `instance` to create/update.
 * `tag` - String. Optional. Used to update all instances of a Widget.
-* `host` - String. Optional. Used to target a specific Widget Host.
+* `host` - String. Optional. Used to target a specific <a href="#dfn-widget-host">Widget Host</a>.
 
 This method will resolve undefined if successful, but should throw a descriptive Error if one is encountered. For example:
 
@@ -341,7 +383,7 @@ A `WidgetEvent` is an object with the following properties:
 * `host` - This is the GUID for the host (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
 * `action` - This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
 * `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which would be used to update the widget using `show()` or save its settings using `saveSettings()`.
-* `data` - This object comprises key/value pairs representing data sent from the Widget Host as part of the event.
+* `data` - This object comprises key/value pairs representing data sent from the <a href="#dfn-widget-host">Widget Host</a> as part of the event.
 
 ```js
 {
@@ -374,10 +416,10 @@ self.addEventListener('widgetclick', function(event) {
 
 There are a few special `WidgetEvent` `action` types to consider as well. 
 
-* "WidgetInstall" - Executed when a Widget Host is requesting installation of a widget.
-* "WidgetUninstall" - Executed when a Widget Host is requesting un-installation of a widget.
+* "WidgetInstall" - Executed when a <a href="#dfn-widget-host">Widget Host</a> is requesting installation of a widget.
+* "WidgetUninstall" - Executed when a <a href="#dfn-widget-host">Widget Host</a> is requesting un-installation of a widget.
 * "WidgetSave" - Executed when a Widget has settings and the user saves the settings for a specific `WidgetInstance`.
-* "WidgetResume" - Executed when a Widget Host is switching from its inactive to active state.
+* "WidgetResume" - Executed when a <a href="#dfn-widget-host">Widget Host</a> is switching from its inactive to active state.
 
 <p id="install">Here is the flow for install:</p>
 
@@ -388,7 +430,7 @@ There are a few special `WidgetEvent` `action` types to consider as well.
     a. captures the Widget `tag` from the `widget` property,
     b. looks up the Widget via `widgets.matchAll()`, and
     c. makes a `Request` for its `data` endpoint.
-3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the Widget Host via the `show()` method.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the <a href="#dfn-widget-host">Widget Host</a> via the `show()` method.
 4. Internally, a new `WidgetInstance` is created — with default `settings` values, if `settings` are defined — and gets pushed into the `instances` array of the corresponding `Widget`.
 
 <p id="uninstall">The "uninstall" process is similar:</p>
@@ -409,7 +451,7 @@ There are a few special `WidgetEvent` `action` types to consider as well.
 3. If it has settings and the two do not match, the new data is saved to the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
 4. The Service Worker receives the event and can react by issuing a request for new data, based on the updated settings values.
 
-<p id="resume">The final special event is "WidgetResume." Many Widget Hosts will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the Widget Host will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.</p>
+<p id="resume">The final special event is "WidgetResume." Many <a href="#dfn-widget-host">Widget Hosts</a> will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the <a href="#dfn-widget-host">Widget Host</a> will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.</p>
 
 ![](media/resume.gif)
 
