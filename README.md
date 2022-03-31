@@ -304,7 +304,7 @@ This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope
 * `getByTag()` - Requires an <var>tag</var> that matches a Widget’s `tag`. Returns a Promise that resolves to a `Widget` or *undefined*.
 * `getByInstance()` - Requires an instance <var>id</var> that is used to find the associated `Widget`. Returns a Promise that resolves to a `Widget` or *undefined*.
 * `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of zero or more [`Widget` objects](#the-widget-object) that match the `options` criteria.
-* `createInstance()` - Requires a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to the [`WidgetInstance`](#the-widgetinstance-object) `id` or Error.
+* `createInstance()` - Requires a host `id` and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to the [`WidgetInstance`](#the-widgetinstance-object) `id` or Error.
 * `updateInstance()` - Requires an instance `id` and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to *undefined* or Error.
 * `removeInstance()` - Requires an instance `id`. Returns a Promise that resolves to *undefined* or Error.
 * `updateByTag()` - Requires an <var>tag</var> and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to *undefined* or Error.
@@ -373,7 +373,7 @@ The `getByTag` method is used to look up a specific `Widget` based on its `tag`.
 1. If the argument <var>tag</var> is not a String, return a Promise rejected with a TypeError.
 1. Let <var>promise</var> be a new Promise.
 1. Let <var>options</var> be an new Object.
-1. Set <var>options.tag</var> be the value of <var>tag</var>.
+1. Set <var>options["tag"]</var> be the value of <var>tag</var>.
 1. Run these substeps in parallel:
    1. Let <var>search</var> be the result of running the algorithm specified in [matchAll(options)](#widgetsmatchall) with <var>options</var>.
    1. Wait until <var>search</var> settles.
@@ -400,7 +400,7 @@ The `getByInstance` method is used to look up a specific `Widget` based on the e
 1. If the argument <var>id</var> is not a String, return a Promise rejected with a TypeError.
 1. Let <var>promise</var> be a new Promise.
 1. Let <var>options</var> be an new Object.
-1. Set <var>options.id</var> be the value of <var>id</var>.
+1. Set <var>options["id"]</var> be the value of <var>id</var>.
 1. Run these substeps in parallel:
    1. Let <var>search</var> be the result of running the algorithm specified in [matchAll(options)](#widgetsmatchall) with <var>options</var>.
    1. Wait until <var>search</var> settles.
@@ -418,8 +418,8 @@ The `getByInstance` method is used to look up a specific `Widget` based on the e
 
 The `matchAll` method is used to find up one or more `Widget`s based on <var>options</var> criteria. The `matchAll` method is analogous to `clients.matchAll()`. It allows developers to limit the scope of matches based on any of the following:
 
-* `tag: tagname` - Only matches a Widget whose `tag` matches <var>tagname</var>.
-* `instance: id` - Only matches a Widget that has a Widget Instance whose `id` matches <var>id</var>.
+* `tag: "tag_name"` - Only matches a Widget whose `tag` matches `tag` value.
+* `instance: "id"` - Only matches a Widget that has a Widget Instance whose `id` matches the `instance` value.
 * `installable: true` - Only matches Widgets supported by a [Widget Host](#dfn-widget-host) on this device.
 * `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of each Widget’s `instances` array).
 
@@ -432,21 +432,21 @@ The `matchAll` method is used to find up one or more `Widget`s based on <var>opt
 1. Run the following steps in parallel:
    1. Let <var>matchedWidgets</var> be a new list.
    1. For each service worker `Widget` <var>widget</var>:
-      1. If <var>options["installable"]</var> is defined and its value does not match <var>widget.installable</var>, continue.
+      1. If <var>options["installable"]</var> is defined and its value does not match <var>widget["installable"]</var>, continue.
       1. If <var>options["installed"]</var> is defined:
-         1. Let <var>instanceCount</var> be the number of items in <var>widget.instances</var>.
+         1. Let <var>instanceCount</var> be the number of items in <var>widget["instances"]</var>.
          1. If <var>options["installed"]</var> is `true` and <var>instanceCount</var> is 0, continue.
          1. If <var>options["installed"]</var> is `false` and <var>instanceCount</var> is greater than 0, continue.
-      1. If <var>options["tag"]</var> is defined and its value does not match <var>widget.tag</var>, continue.
+      1. If <var>options["tag"]</var> is defined and its value does not match <var>widget["tag"]</var>, continue.
       1. If <var>options["instance"]</var> is defined:
          1. Let <var>matchingInstance</var> be null.
-         1. For each <var>instance</var> in <var>widget.instances</var>:
-            1. If <var>instance.id</var> is equal to <var>options["instance"]</var>
+         1. For each <var>instance</var> in <var>widget["instances"]</var>:
+            1. If <var>instance["id"]</var> is equal to <var>options["instance"]</var>
                1. Set <var>matchingInstance</var> to <var>instance</var> and abort these steps.
             1. Else continue.
          1. If <var>matchingInstance</var> is null, continue.
       1. Add <var>widget</var> to <var>matchedWidgets</var>.
-    1. Resolve <var>promise</var> with a new frozen array of <var>matchedWidgets</var>.
+   1. Resolve <var>promise</var> with a new frozen array of <var>matchedWidgets</var>.
 1. Return <var>promise</var>.
 
 
@@ -454,26 +454,90 @@ The `matchAll` method is used to find up one or more `Widget`s based on <var>opt
 
 The `Widgets` interface enables developers to work with individual widget instances or all instances of a widget, based on its `tag`.
 
-#### The `WidgetPayload` Object
 
-#### widget.createInstance()
+#### Creating a Widget Payload
 
-Developers will use `widgets.show()` to both create and update Widgets. The method takes one argument, <var>payload</var> which is an object that provides the [Widget Host](#dfn-widget-host) with the necessary information for rendering the widget. The members are:
+In order to create or update a widget instance, the Service Worker must send the data necessary to render that widget. This data is called a payload and includes both template- and content-related data.  The members of a <span id="widget-payload">`WidgetPayload`</span> are:
 
-* `definition` - Object. The `WidgetDefinition` for the Widget.
-* `data` - Object. The data to flow into it.
-* `instance` - Object. Optional. The `instance` to create/update.
-* `tag` - String. Optional. Used to update all instances of a Widget.
-* `host` - String. Optional. Used to target a specific [Widget Host](#dfn-widget-host).
+* `definition` - Object. A `WidgetDefinition` for the Widget. This could be the raw definition from the `Widgets` interface or a consructed/modified version of that `WidgetDefinition`.
+* `data` - String. The data to flow into the Widget template. If a developer wants to route JSON data into the Widget, they will need to `stringify()` it first.
+* `settings` - Object. The settings for the widget instance (if any).
 
-This method will resolve undefined if successful, but should throw a descriptive Error if one is encountered. For example:
+TODO: Steps
+
+#### Widget Errors
+
+Some APIs may return an Error when the widget cannot be created, updated, or removed. These Errors should have descriptive strings like:
 
 * "Widget Host not found"
 * "Widget template not supported"
 * "Widget instance not found"
 * "Data required by the template was not supplied."
 
-_Note: instead of resolving to undefined if successful, it could resolve with a widget instance id or a reference to the widget instance itself._
+#### widget.createInstance()
+
+Developers will use `createInstance()` to create a new instance of a Widget for a specific host. This method will resolve with the instance `id` if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+
+* **Arguments:** <var>hostId</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
+* **Returns:** String. The `id` of the `WidgetInstance` that was created.
+
+`createInstance( hostId, payload )` method must run these steps:
+
+1. Let <var>promise</var> be a new promise.
+1. If <var>hostId</var> is null or not a String or <var>payload</var> is null or not an Object or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
+1. Let <var>manifest</var> be the Web App Manifest object associated with the origin.
+1. Let <var>tag</var> be <var>payload["definition"]["tag"]</var>.
+1. Let <var>widget</var> be the result of running the algorithm specified in [getByTag(tag)](#widgetsgetbytag) with <var>tag</var>.
+1. Let <var>settings</var> be a new object.
+1. If <var>wiget["hasSettings"]</var> is true
+   1. For each <var>setting</var> in <var>wiget["definition"]["settings"]</var>
+      1. If setting["default"] is not null
+         1. Set <var>settings[setting["name"]]<var> to setting["default"]
+      2. Else
+         1. Set <var>settings[setting["name"]]<var> to an empty string
+1. Set <var>payload</var> to the result of [creating a widget payload](#creating-a-widget-payload) with <var>payload</var>, <var>settings</var> and <var>manifest</var>.
+1. Let <var>updated</var> be the current timestamp.
+1. Let <var>instanceId</var> be the result of installing the widget on the device (e.g., by calling the appropriate [Widget Service](#dfn-widget-service) API) with <var>hostId</var> and <var>payload</var>.
+   1. If <var>instanceId</var> is an Error
+      1. Reject <var>promise</var> with <var>instanceId</var> and return promise.
+   2. Else
+      1. Let <var>instance</var> be the result of [creating an instance](#creating-a-widget-instance) with <var>instanceId</var>, <var>hostId</var>, <var>settings</var>, <var>payload</var>, and <var>updated</var>.
+      1. Append <var>instance</var> to <var>widget["instances"]</var>.
+      1. Resolve <var>promise</var> with <var>instanceId</var>.
+1. Return <var>promise</var>.
+
+#### widget.updateInstance()
+
+Developers will use `updateInstance()` to push new data to an existing Widget Instance. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+
+* **Arguments:** <var>instanceId</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
+* **Returns:** *undefined*
+
+`updateInstance( instanceId, payload )` method must run these steps:
+
+1. Let <var>promise</var> be a new promise.
+1. If <var>instanceId</var> is null or not a String or <var>payload</var> is null or not an Object or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
+1. Let <var>manifest</var> be the Web App Manifest object associated with the origin.
+1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
+1. Let <var>widgetInstance</var> be null.
+1. For <var>i</var> in <var>widget["instances"]</var>:
+   1. If <var>i["id"]</var> is equal to <var>instanceId</var>
+      1. Set <var>widgetInstance</var> to <var>i</var> and exit the loop.
+   1. Else continue.
+1. Let <var>hostId</var> be <var>widgetInstance["host"]</var>.
+1. Let <var>settings</var> be <var>widgetInstance["settings"]</var>.
+1. Set <var>payload</var> to the result of [creating a widget payload](#creating-a-widget-payload) with <var>payload</var>, <var>settings</var> and <var>manifest</var>.
+1. Let <var>updated</var> be the current timestamp.
+1. Let <var>operation</var> be the result of updating the widget instance on the device (e.g., by calling the appropriate [Widget Service](#dfn-widget-service) API) with <var>instanceId</var> and <var>payload</var>.
+   1. If <var>operation</var> is an Error
+      1. Reject <var>promise</var> with <var>operation</var> and return promise.
+   2. Else
+      1. Let <var>instance</var> be the result of [creating an instance](#creating-a-widget-instance) with <var>instanceId</var>, <var>hostId</var>, <var>settings</var>, <var>payload</var>, and <var>updated</var>.
+      1. Set <var>widgetInstance</var> to <var>instance</var>.
+      1. Resolve <var>promise</var>.
+1. Return <var>promise</var>.
+
+
 
 ## Widget-related Events
 
