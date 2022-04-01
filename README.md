@@ -567,7 +567,7 @@ Developers will use `updateByTag()` to replace or push new data to all Instances
 * **Arguments:** <var>tag</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
 * **Returns:** *undefined*
 
-`updateInstance( tag, payload )` method must run these steps:
+`updateByTag( tag, payload )` method must run these steps:
 
 1. Let <var>promise</var> be a new promise.
 1. If <var>tag</var> is null or not a String or <var>payload</var> is not a `WidgetPayload` or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
@@ -725,46 +725,87 @@ There are a few special `WidgetEvent` `action` types to consider as well.
 Here is how each of these events could be handled in the Service Worker:
 
 ```js
+const periodicSync = self.registration.periodicSync;
+
+async function updateWidget( widget ){
+  // Widgets with settings should be updated on a per-instance level
+  if ( widget.hasSettings ) {
+    widget.instances.map(async (instance) => {
+      let settings_data = new FormData();
+      for ( let key in instance.settings ) {
+        settings_data.append(key, instance.settings[key]);
+      }
+      fetch( widget.data, {
+        method: "POST",
+        body: settings_data
+      })
+      .then( response => {
+        let payload = {
+          definition: widget.definition,
+          data: response.body
+        };
+        widgets.updateInstance( instance.id, payload );
+      });
+    });
+  // other widgets can be updated en masse via their tags
+  } else {
+    fetch( widget.data )
+      .then( response => {
+        let payload = {
+          definition: widget.definition,
+          data: response.body
+        };
+        widgets.updateByTag( widget.tag, payload );
+      });
+  }
+}
+
 self.addEventListener('widgetclick', function(event) {
 
   const action = event.action;
-  const tag = event.widget.tag;
-  const id = event.widget.id;
-  const host = event.host;
+  const host_id = event.host;
   
   event.waitUntil(
-    // get the Widget
-    const widget = wigets
-                    .matchAll({ tag: tag });
 
-    // Get the instance
-    const instance = widget.instances
-                       .filter(instance => instance.id == id);
-    
     // If a widget is being installed
     switch action:
       case "WidgetInstall":
+        let widget = widgets.getByTag( event.widget.tag );
         console.log("installing", widget);
         
         // get the data needed
         fetch( widget.data )
           .then( response => {
-
+            let payload = {
+              definition: widget.definition,
+              data: response.body
+            };
             // show the widget, passing in 
             // the widget definition and data
-            widgets.show({
-              definition: widget.definition,
-              tag: tag,
-              host: host,
-              data: response.body
-            });
-
+            widgets
+              .createInstance( host_id, payload )
+              .then(()=>{
+                // if the widget is set up to auto-update…
+                if ( "update" in widget.definition ) {
+                  let tags = await registration.periodicSync.getTags();
+                  // only one registration per tag
+                  if ( ! tags.includes( widget.tag ) ) {
+                    periodicSync.register( widget.tag, {
+                        minInterval: widget.definition.update
+                    });
+                  }
+                }
+              });
           });
         return;
       
       case "WidgetUninstall":
-        console.log("uninstall", widget);
+        let instance_id = event.widget.id;
+        let widget = widgets.getByInstance( instance_id );
+
+        console.log("uninstalling", widget.name, "instance", instance_id);
         
+        widgets.removeInstance( instance_id );
         // do any cleanup that’s needed
         
         return;
@@ -773,42 +814,11 @@ self.addEventListener('widgetclick', function(event) {
         console.log("resuming all widgets");
 
         // refresh the data on each widget (using Clients, just to show it can be done)
-        clients
-          .matchAll({ type: "widget" })
+        widgets
+          .matchAll({ installed: true })
           .then(function(widgetList) {
             for (let i = 0; i < widgetList.length; i++) {
-              var widget = clientList[i];
-              // Widgets with settings should be updated on a per-instance level
-              if ( widget.hasSettings )
-              {
-                widget.instances.map(instance => {
-                  let settings_data = new FormData();
-                  for ( let key in instance.settings ) {
-                    settings_data.append(key, instance.settings[key]);
-                  }
-                  fetch( widget.data, {
-                    method: "POST",
-                    body: settings_data
-                  })
-                  .then( response => {
-                    widgets.show({
-                      instance: instance.id,
-                      definition: widget.definition,
-                      data: response.body
-                    });
-                  });
-                });
-              // other widgets can be updated en masse via their tags
-              } else {
-                fetch( widget.data )
-                  .then( response => {
-                    widgets.show({
-                      tag: widget.tag,
-                      definition: widget.definition,
-                      data: response.body
-                    });
-                  });
-              }
+              updateWidget( widgetList[i] );
             }
           });
 
@@ -818,6 +828,17 @@ self.addEventListener('widgetclick', function(event) {
     }
   );
 
+});
+
+self.addEventListener('periodicsync', event => {
+  const tag = event.tag;
+  
+  const widget = widgets.getByTag( tag );
+  if ( widget && "update" in widget.definition ) {
+    event.waitUntil( updateWidget( widget ) );
+  }
+  
+  // Other logic for different tags as needed.
 });
 ```
 
