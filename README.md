@@ -27,59 +27,69 @@ Under this proposal, developers would be free to define Widgets that support bot
 ### Nouns
 
 <dl>
-<dt id="dfn-widget">Widget</dt>
-<dd>
+<dt id="dfn-widget">Widget</dt><dd>
 
 A discrete user experience that represents a part of a website or app’s functionality. Refers to the prototypical definition of an experience (e.g., follow an account), *not* the <a href="#dfn-widget-instance">individual representations of this widget</a> (e.g., follow bob) that exist in a [Widget Host](#dfn-widget-host).
   
 </dd>
-<dt id="dfn-widget-host">Widget Host</dt>
-<dd>
+<dt id="dfn-widget-host">Widget Host</dt><dd>
   
 A container that manages and renders widgets.
   
 </dd>
-<dt id="dfn-widget-instance">Widget Instance</dt>
-<dd>
+<dt id="dfn-widget-instance">Widget Instance</dt><dd>
   
 The interactive experience of a [Widget](#dfn-widget) within a [Widget Host](#dfn-widget-host). Multiple instances of a [Widget](#dfn-widget) may exist within a [Widget Host](#dfn-widget-host). These distinct instances may have associated [settings](#dfn-widget-settings).
   
 </dd>
-<dt id="dfn-widget-settings">Widget Settings</dt>
-<dd>
+<dt id="dfn-widget-settings">Widget Settings</dt><dd>
   
 Configuration options, defined on a [Widget](#dfn-widget) and unique to a [Widget Instance](#dfn-widget-instance), that enable that instance to be customized.
   
 </dd>
-<dt id="dfn-widget-provider">Widget Provider</dt>
-<dd>
+<dt id="dfn-widget-provider">Widget Provider</dt><dd>
+
 An application that exposes Widgets. A browser would likely be the Widget Provider on behalf of its PWAs and would act as the proxy between those PWAs and any <a href="#dfn-widget-service">Widget Service</a>.
+
 </dd>
-<dt id="dfn-widget-registry">Widget Registry</dt>
-<dd>
+<dt id="dfn-widget-registry">Widget Registry</dt><dd>
+
 The list of <a href="#dfn-install">installable</a> <a href="#dfn-widget">Widgets</a> [registered](#dfn-register) by [Widget Providers](#dfn-widget-provider).
 </dd>
-<dt id="dfn-widget-service">Widget Service</dt>
-<dd>
+<dt id="dfn-widget-service">Widget Service</dt><dd>
   
-Manages communications between [Widget Hosts](#dfn-widget-host) and [Widget Providers](#dfn-widget-provider).
-  
+Manages communications between [Widget Hosts](#dfn-widget-host) and [Widget Providers](#dfn-widget-provider).  
 </dd>
 </dl>
 
 ### Verbs
 
 <dl>
-  <dt id="dfn-install">Install<br>Instantiate</dt>
-  <dd>Create a [Widget Instance](#dfn-widget-instance).</dd>
-  <dt id="dfn-register">Register</dt>
-  <dd>Add a [Widget](#dfn-widget) to the [Widget Registry](#dfn-widget-registry).</dd>
-  <dt id="dfn-uninstall">Uninstall</dt>
-  <dd>Destroy a [Widget Instance](#dfn-widget-instance).</dd>
-  <dt id="dfn-unregister">Unregister</dt>
-  <dd>Remove a [Widget](#dfn-widget) from the [Widget Registry](#dfn-widget-registry).</dd>
-  <dt id="dfn-unregister">Update</dt>
-  <dd>Push new data to a [Widget Instance](#dfn-widget-instance).</dd>
+<dt id="dfn-install">Install<br>Instantiate</dt><dd>
+
+Create a [Widget Instance](#dfn-widget-instance).
+
+</dd>
+<dt id="dfn-register">Register</dt><dd>
+
+Add a [Widget](#dfn-widget) to the [Widget Registry](#dfn-widget-registry).
+
+</dd>
+<dt id="dfn-uninstall">Uninstall</dt><dd>
+
+Destroy a [Widget Instance](#dfn-widget-instance).
+
+</dd>
+<dt id="dfn-unregister">Unregister</dt><dd>
+
+Remove a [Widget](#dfn-widget) from the [Widget Registry](#dfn-widget-registry).
+
+</dd>
+<dt id="dfn-unregister">Update</dt><dd>
+
+Push new data to a [Widget Instance](#dfn-widget-instance).
+
+</dd>
 </dl>
 
 
