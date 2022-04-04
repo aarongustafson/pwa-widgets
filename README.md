@@ -235,15 +235,21 @@ One or more Widgets are defined within the `widgets` member of a Web App Manifes
 
 ### Required properties
 
-The `name` value is a `DOMString` that will serve as the title of the widget presented to users.
+* `name` - `DOMString`. Serves as the title of the widget presented to users.
+* `tag` - `DOMString`. Serves as a way to reference the widget within the Service Worker as a `WidgetClient` and is analogous to a [Notification `tag`](https://notifications.spec.whatwg.org/#tag). `WidgetClient` still needs to be defined, but would be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
 
-The `tag` value is a `DOMString` that will serve as a way to reference the widget within the Service Worker as a `WidgetClient` and is analogous to a [Notification `tag`](https://notifications.spec.whatwg.org/#tag). `WidgetClient` still needs to be defined, but would be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
+### Optional properties
 
-The `screenshots` value is analogous to [the `screenshots` member of the Manifest](https://w3c.github.io/manifest-app-info/#screenshots-member). It is an array of [`ImageResource` objects](https://www.w3.org/TR/image-resource/#dom-imageresource) with optional [`platform`](https://w3c.github.io/manifest-app-info/#platform-member) values that can associate the screenshot with how it shows up in a specific [Widget Host](#dfn-widget-host). Developers should be sure to include a [`label`](https://w3c.github.io/manifest-app-info/#label-member) value in each [`ImageResource` object](https://www.w3.org/TR/image-resource/#dom-imageresource) for accessibility.
+* `short_name` - `DOMString`. An alternative short version of the `name`.
+* `screenshots` - `Array`. Analogous to [the `screenshots` member of the Manifest](https://w3c.github.io/manifest-app-info/#screenshots-member). It is an array of [`ImageResource` objects](https://www.w3.org/TR/image-resource/#dom-imageresource) with optional [`platform`](https://w3c.github.io/manifest-app-info/#platform-member) values that can associate the screenshot with how it shows up in a specific [Widget Host](#dfn-widget-host). Developers should be sure to include a [`label`](https://w3c.github.io/manifest-app-info/#label-member) value in each [`ImageResource` object](https://www.w3.org/TR/image-resource/#dom-imageresource) for accessibility.
+* `auth` - Boolean. Informational. Whether or not the Widget requires auth. False if not included.
+* `update` - Unsigned Integer. Informational. The frequency (in seconds) a developer wishes for the widget to be updated; for use in registering a Periodic Sync. The actual update schedule will use the Service Worker’s Periodic Sync infrastructure.
 
 ### Rich Widget properties
 
-A [Rich Widget](#Rich-Widgets) MUST include a `url` property, which is a valid `URL` string pointing to the Widget’s HTML. That URL MUST exist within [the scope of the Web App Manifest](https://w3c.github.io/manifest/#dfn-scope) and [the scope of the Service Worker](https://w3c.github.io/ServiceWorker/#dom-serviceworkerregistration-scope).
+A [Rich Widget](#Rich-Widgets) MUST include:
+
+* `url` - A valid `URL` string pointing to the Widget’s HTML. That URL MUST exist within [the scope of the Web App Manifest](https://w3c.github.io/manifest/#dfn-scope) and [the scope of the Service Worker](https://w3c.github.io/ServiceWorker/#dom-serviceworkerregistration-scope).
 
 *Note: Rich Widgets will likely be resource-limited, so developers are advised to avoid relying on large client-side libraries to render and update Rich Widgets.*
 
@@ -266,11 +272,6 @@ A developer MAY define the following UI-related properties:
 
 * `actions` - An array of [`WidgetAction` objects](#Defining-a-WidgetAction) that will be exposed to users (if the template supports them) within an action-supporting template and trigger an event within the origin’s Service Worker.
 * `settings` - A array of [`WidgetSetting` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently within a [Widget Host](#dfn-widget-host) (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
-
-A developer MAY define the following informational properties as a means of decoupling widget-specific business logic from their Service Worker code:
-
-* `auth` - Boolean as to whether or not the Widget requires auth. False if not included.
-* `update` - the frequency (in seconds) a developer wishes for the widget to be updated; for use in registering a Periodic Sync. The actual update schedule will use the Service Worker’s Periodic Sync infrastructure.
 
 ### Defining a `WidgetAction`
 
