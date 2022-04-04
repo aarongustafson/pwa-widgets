@@ -1,7 +1,3 @@
-<style type="text/css">
-dt+dt { margin-top: 0; }
-</style>
-
 # PWA widgets
 
 Playing with some ideas around widget definitions for PWAs.
@@ -51,7 +47,7 @@ Under this proposal, developers would be free to define Widgets that support bot
 
 <dl>
   <dt id="dfn-install">Install</dt>
-  <dt id="dfn-instantiate">Instantiate</dt>
+  <dt id="dfn-instantiate" style="margin-top: 0">Instantiate</dt>
   <dd>Create a [Widget Instance](#dfn-widget-instance).</dd>
   <dt id="dfn-register">Register</dt>
   <dd>Add a [Widget](#dfn-widget) to the [Widget Registry](#dfn-widget-registry).</dd>
