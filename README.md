@@ -328,6 +328,21 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 "ms_ac-template": "/widgets/templates/agenda.ac.json",
 ```
 
+## Advertising Widget Availability
+
+In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are available for install, the available widgets must be exposed to the [Widget Service](#dfn-widget-service) in some way. The explicit mechanism for advertising a widget will vary by platform, but before that can happen, the User Agent must determine whether each widget is installable.
+
+The steps for <b id="determining-installability">determining install-ability</b> with `WidgetDefinition` <var>widget</var>, Web App Manifest <var>manifest</var>, and Widget Host <var>host</var> are as follows:
+
+1. If any of <var>widget["name"]</var>, <var>widget["icons"]</var>, <var>manifest["name"]</var>, <var>manifest["icons"]</var> are omitted, classify the Widget as uninstallable and exit.
+1. If <var>host</var> requires a screenshot and <var>widget["screenshots"]</var> is omitted, classify the Widget as uninstallable and exit.
+1. If <var>host</var> only supports [rich widgets](#rich-widgets) and <var>widget["url"]</var> is omitted, classify the Widget as uninstallable and exit.
+1. If <var>host</var> only supports [templated widgets](#templated-widgets) and <var>widget["template"]</var> and <var>widget["data"]</var> are omitted, classify the Widget as uninstallable and exit.
+1. If <var>widget["template"]</var> is not an acceptable template generic name per the host, classify the Widget as uninstallable and exit.
+1. If <var>widget["type"]</var> is not an acceptable template MIME type per the host, classify the Widget as uninstallable and exit.
+1. If <var>host</var> has additional requirements that are not met by <var>widget</var> (e.g., required `WidgetDefinition` extensions), classify the Widget as uninstallable and exit.
+1. Classify the widget as installable.
+
 ## Service Worker APIs
 
 This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope`](https://www.w3.org/TR/service-workers/#serviceworkerglobalscope-interface). This attribute references the `Widgets` interface (which is analogous to `Clients`) that exposes the following Promise-based methods:
