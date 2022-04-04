@@ -107,7 +107,7 @@ As fully-rendered web pages (analogous to an `iframe`), Rich Widgets need to com
 4. Initiating any multimedia playback requires user interaction (though "piggybacking" on pre-existing multimedia playback initiated from within the same origin would not be similarly restricted), and
 5. Data updates must be performed by the Service Worker.
 
-Additionally, the [Widget Host](#dfn-widget-host) will likely reserve the right to suspend a widget at any time. Looking at how many renderers handle suspension, it’s likely that many [Widget Hosts](#dfn-widget-host) will create a bitmap representation of a Widget in its last-known state. The origin’s Service Worker may periodically request to update the Widget (and create a new snapshot) when it’s not in use.[^1] For more on this, consult the [events section](#Events).
+Additionally, the [Widget Host](#dfn-widget-host) will likely reserve the right to suspend a widget at any time. Looking at how many renderers handle suspension, it’s likely that many [Widget Hosts](#dfn-widget-host) will create a bitmap representation of a Widget in its last-known state. The origin’s Service Worker may periodically request to update the Widget (and create a new snapshot) when it’s not in use.[^1] For more on this, consult the [events section](#widget-related-events).
 
 Given that the web is responsive, a Rich Widget’s dimensions should not matter much. The content would merely adapt to the available real estate. Some [Widget Hosts](#dfn-widget-host) may even support user resizing of a Widget.
 
