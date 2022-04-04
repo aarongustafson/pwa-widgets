@@ -26,9 +26,9 @@ Under this proposal, developers would be free to define Widgets that support bot
 
 ### Nouns
 
+* **<dfn id="dfn-widget">Widget</dfn>** - A discrete user experience that represents a part of a website or app’s functionality. Refers to the prototypical definition of an experience (e.g., follow an account), *not* the <a href="#dfn-widget-instance">individual representations of this widget</a> (e.g., follow bob) that exist in a [Widget Host](#dfn-widget-host).
+
 <dl>
-  <dt id="dfn-widget">Widget</dt>
-  <dd>A discrete user experience that represents a part of a website or app’s functionality. Refers to the prototypical definition of an experience (e.g., follow an account), *not* the <a href="#dfn-widget-instance">individual representations of this widget</a> (e.g., follow bob) that exist in a [Widget Host](#dfn-widget-host).</dd>
   <dt id="dfn-widget-host">Widget Host</dt>
   <dd>A container that manages and renders widgets.</dd>
   <dt id="dfn-widget-instance">Widget Instance</dt>
@@ -40,14 +40,17 @@ Under this proposal, developers would be free to define Widgets that support bot
   <dt id="dfn-widget-registry">Widget Registry</dt>
   <dd>The list of <a href="#dfn-install">installable</a> <a href="#dfn-widget">Widgets</a> [registered](#dfn-register) by [Widget Providers](#dfn-widget-provider).</dd>
   <dt id="dfn-widget-service">Widget Service</dt>
-  <dd>Manages communications between [Widget Hosts](#dfn-widget-host) and [Widget Providers](#dfn-widget-provider).</dd>
+  <dd>
+  
+  Manages communications between [Widget Hosts](#dfn-widget-host) and [Widget Providers](#dfn-widget-provider).
+  
+  </dd>
 </dl>
 
 ### Verbs
 
 <dl>
-  <dt id="dfn-install">Install</dt>
-  <dt id="dfn-instantiate" style="margin-top: 0">Instantiate</dt>
+  <dt id="dfn-install">Install<br>Instantiate</dt>
   <dd>Create a [Widget Instance](#dfn-widget-instance).</dd>
   <dt id="dfn-register">Register</dt>
   <dd>Add a [Widget](#dfn-widget) to the [Widget Registry](#dfn-widget-registry).</dd>
@@ -833,7 +836,7 @@ self.addEventListener('periodicsync', event => {
   if ( widget && "update" in widget.definition ) {
     event.waitUntil( updateWidget( widget ) );
   }
-  
+
   // Other logic for different tags as needed.
 });
 ```
