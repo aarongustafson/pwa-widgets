@@ -545,7 +545,7 @@ Developers will use `createInstance()` to create a new instance of a Widget for 
 1. If <var>hostId</var> is null or not a String or <var>payload</var> is null or not an Object or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
 1. Let <var>tag</var> be <var>payload["definition"]["tag"]</var>.
 1. Let <var>widget</var> be the result of running the algorithm specified in [getByTag(tag)](#widgetsgetbytag) with <var>tag</var>.
-1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](creating-a-default-widgetsettings-object) with <var>widget</var>.
+1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](#creating-a-default-widgetsettings-object) with <var>widget</var>.
 1. Set <var>payload["definition"]</var> to the result of [injecting manifest members into a `WidgetPayload`](#injecting-manifest-members-into-a-payload) with <var>payload</var>.
 1. Let <var>instanceId</var> be the result of installing the widget on the device (e.g., by calling the appropriate [Widget Service](#dfn-widget-service) API) with <var>hostId</var> and <var>payload</var>.
    1. If <var>instanceId</var> is an Error
@@ -576,7 +576,7 @@ Developers will use `updateInstance()` to replace or push new data to an existin
 1. If <var>widgetInstance</var> is null, reject <var>promise</var> with an Error and return <var>promise</var>.
 1. Let <var>hostId</var> be <var>widgetInstance["host"]</var>.
 1. If <var>widgetInstance["settings"]</var> is null or not an Object
-   1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](creating-a-default-widgetsettings-object) with <var>widget</var>.
+   1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](#creating-a-default-widgetsettings-object) with <var>widget</var>.
 1. Else
    1. Set <var>payload["settings"]</var> to <var>widgetInstance["settings"]</var>.
 1. Set <var>payload</var> to the result of [injecting manifest members into a `WidgetPayload`](#injecting-manifest-members-into-a-payload) with <var>payload</var>.
@@ -694,7 +694,7 @@ A [`WidgetEvent`](#widget-related-events) is an object with the following proper
 }
 ```
 
-You can see a basic example of this in use in [the user login video, above](user-login). There is a walk through of the interaction following that video, but here’s how the actual [`WidgetEvent`](#widget-related-events) could be handled:
+You can see a basic example of this in use in [the user login video, above](#user-login). There is a walk through of the interaction following that video, but here’s how the actual [`WidgetEvent`](#widget-related-events) could be handled:
 
 ```js
 self.addEventListener('widgetclick', function(event) {
