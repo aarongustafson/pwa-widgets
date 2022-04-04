@@ -330,16 +330,25 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 
 ## Advertising Widget Availability
 
-In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are available for install, the available widgets must be exposed to the [Widget Service](#dfn-widget-service) in some way. The explicit mechanism for advertising a widget will vary by platform, but before that can happen, the User Agent must determine whether each widget is installable.
+In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are available for install, the available widgets must be exposed to the [Widget Service](#dfn-widget-service) in some way. That advertisement should include the following details from the Web App Manifest and the Widget itself:
 
-The steps for <b id="determining-installability">determining install-ability</b> with `WidgetDefinition` <var>widget</var>, Web App Manifest <var>manifest</var>, and Widget Host <var>host</var> are as follows:
+* <var>manifest["name"]</var>
+* <var>manifest["short_name"]</var> (optionally)
+* <var>manifest["icons"]</var>
+* <var>manifest["lang"]</var>
+* <var>manifest["dir"]</var>
+* <var>widget["name"]</var>
+* <var>widget["short_name"]</var> (optionally)
+* <var>widget["icons"]</var> (optionally)
+* <var>widget["screenshots"]</var> (optionally)
 
-1. If any of <var>widget["name"]</var>, <var>widget["icons"]</var>, <var>manifest["name"]</var>, <var>manifest["icons"]</var> are omitted, classify the Widget as uninstallable and exit.
-1. If <var>host</var> requires a screenshot and <var>widget["screenshots"]</var> is omitted, classify the Widget as uninstallable and exit.
-1. If <var>host</var> only supports [rich widgets](#rich-widgets) and <var>widget["url"]</var> is omitted, classify the Widget as uninstallable and exit.
-1. If <var>host</var> only supports [templated widgets](#templated-widgets) and <var>widget["template"]</var> and <var>widget["data"]</var> are omitted, classify the Widget as uninstallable and exit.
-1. If <var>widget["template"]</var> is not an acceptable template generic name per the host, classify the Widget as uninstallable and exit.
-1. If <var>widget["type"]</var> is not an acceptable template MIME type per the host, classify the Widget as uninstallable and exit.
+Beyond advertising a widget based on its definition, the User Agent may also need to determine whether a given widget is installable. The steps for <b id="determining-installability">determining install-ability</b> with `WidgetDefinition` <var>widget</var>, Web App Manifest <var>manifest</var>, and Widget Host <var>host</var> are as follows:
+
+1. If <var>host</var> requires any of the above members and they are omitted, classify the Widget as uninstallable and exit.
+1. If <var>host</var> **only** supports [rich widgets](#rich-widgets) and <var>widget["url"]</var> is omitted, classify the Widget as uninstallable and exit.
+1. If <var>host</var> **only** supports [templated widgets](#templated-widgets) and <var>widget["template"]</var> and <var>widget["data"]</var> are omitted, classify the Widget as uninstallable and exit.
+1. If <var>widget["template"]</var> is not an acceptable template generic name according to <var>host</var>, classify the Widget as uninstallable and exit.
+1. If <var>widget["type"]</var> is not an acceptable MIME type for <var>widget["data"]</var> according to <var>host</var>, classify the Widget as uninstallable and exit.
 1. If <var>host</var> has additional requirements that are not met by <var>widget</var> (e.g., required `WidgetDefinition` extensions), classify the Widget as uninstallable and exit.
 1. Classify the widget as installable.
 
