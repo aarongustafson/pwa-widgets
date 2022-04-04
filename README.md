@@ -226,6 +226,7 @@ One or more Widgets are defined within the `widgets` member of a Web App Manifes
   "auth": true,
   "update": 900,
   "icons": [ ],
+  "screenshots": [ ],
   "backgrounds": [ ],
   "actions": [ ],
   "settings": [ ]
@@ -238,6 +239,7 @@ The `name` value is a `DOMString` that will serve as the title of the widget pre
 
 The `tag` value is a `DOMString` that will serve as a way to reference the widget within the Service Worker as a `WidgetClient` and is analogous to a [Notification `tag`](https://notifications.spec.whatwg.org/#tag). `WidgetClient` still needs to be defined, but would be similar to [`WindowClient`](https://www.w3.org/TR/service-workers/#ref-for-dfn-window-client).
 
+The `screenshots` value is analogous to [the `screenshots` member of the Manifest](https://w3c.github.io/manifest-app-info/#screenshots-member). It is an array of [`ImageResource` objects](https://www.w3.org/TR/image-resource/#dom-imageresource) with optional [`platform`](https://w3c.github.io/manifest-app-info/#platform-member) values that can associate the screenshot with how it shows up in a specific [Widget Host](#dfn-widget-host). Developers should be sure to include a [`label`](https://w3c.github.io/manifest-app-info/#label-member) value in each [`ImageResource` object](https://www.w3.org/TR/image-resource/#dom-imageresource) for accessibility.
 
 ### Rich Widget properties
 
