@@ -139,7 +139,7 @@ For address books, directories, and social apps:
 For general purposes (e.g., news, promotions, media, social):
 
 * content-carousel
-* content-feed
+* [content-feed](./blob/main/templates/feed.ac.json)
 * content-item
 
 For productivity apps:
@@ -150,7 +150,7 @@ For productivity apps:
 
 For auth-requiring Widgets:
 
-* login-prompt
+* [login-prompt](./blob/main/templates/login.ac.json)
 
 ### Data flow in a Templated Widget
 
