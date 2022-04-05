@@ -182,7 +182,7 @@ Here’s how that might work:
 
 <figure id="user-logout">
 
-![](media/user-logout.gif)
+![](media/logout.gif)
 
 </figure>
 
@@ -195,7 +195,7 @@ The next step in this flow is for the user to log back in. They could do that di
 
 <figure id="user-login">
 
-![](media/user-login.gif)
+![](media/login.gif)
 
 </figure>
 
