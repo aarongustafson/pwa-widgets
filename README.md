@@ -329,9 +329,9 @@ For example, if using something like [Microsoft’s Adaptive Cards](https://docs
 "ms_ac-template": "/widgets/templates/agenda.ac.json",
 ```
 
-## Advertising Widget Availability
+## Registering Available Widgets
 
-In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are available for install, the available widgets must be exposed to the [Widget Service](#dfn-widget-service) in some way. That advertisement should include the following details from the Web App Manifest and the Widget itself:
+In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are available for install, the available widgets must be added to the [Widget Registry](#dfn-widget-registry) in some way. That registration should include the following details from the Web App Manifest and the Widget itself:
 
 * <var>manifest["name"]</var>
 * <var>manifest["short_name"]</var> (optionally)
@@ -343,7 +343,26 @@ In order for [Widget Hosts](#dfn-widget-host) to be aware of what widgets are av
 * <var>widget["icons"]</var> (optionally)
 * <var>widget["screenshots"]</var> (optionally)
 
-Beyond advertising a widget based on its definition, the User Agent may also need to determine whether a given widget is installable. The steps for <b id="determining-installability">determining install-ability</b> with `WidgetDefinition` <var>widget</var>, Web App Manifest <var>manifest</var>, and Widget Host <var>host</var> are as follows:
+The steps for <b id="parsing-widgets-from-a-manifest">parsing widgets from a Web App Manifest</b> with Web App Manifest <var>manifest</var>:
+
+1. Let <var>widgets</var> be a new list.
+1. Let <var>collected_tags</var> be a new list.
+1. Run the following steps in parallel:
+   1. For each <var>manifest_widget</var> in <var>manifest["widgets"]</var>:
+      1. If <var>manifest_widget["tag"]</var> exists in <var>collected_tags</var>, continue.
+      1. Let <var>widget</var> be a new object.
+      1. Set <var>widget["tag"]</var> to the value of <var>manifest_widget["tag"]</var>.
+      1. Set <var>widget["definition"]</var> to the value of <var>manifest_widget</var>.
+      1. Set <var>widget["hasSettings"]</var> to false.
+      1. Set <var>widget["instances"]</var> to an empty array.
+      1. Set <var>widget["installable"]</var> to the result of [determining widget installability](#determining-installability) with <var>manifest_widget</var>, <var>manifest</var>, and Widget Host.
+      1. If <var>widget["installable"]</var> is true
+         1. Run the steps necessary to register <var>manifest_widget</var> with the [Widget Registry](#dfn-widget-registry), with <var>manifest</var> as necessary.
+      1. Add <var>manifest_widget["tag"]</var> to collected_tags</var>.
+      1. Add <var>widget</var> to <var>widgets</var>.
+1. Store a copy of <var>widgets</var> for use with the Service Worker API.
+
+The steps for <b id="determining-installability">determining install-ability</b> with `WidgetDefinition` <var>widget</var>, Web App Manifest <var>manifest</var>, and Widget Host <var>host</var> are as follows:
 
 1. If <var>host</var> requires any of the above members and they are omitted, classify the Widget as uninstallable and exit.
 1. If <var>host</var> **only** supports [rich widgets](#rich-widgets) and <var>widget["url"]</var> is omitted, classify the Widget as uninstallable and exit.
