@@ -454,7 +454,7 @@ The steps for <b id="creating-a-default-widgetsettings-object">creating a defaul
 
 ### Finding Widgets
 
-There are three main ways to look up information about a Widget: by `tag`, by instance `id`, and [by characteristics](#widgetsmatchall).
+There are three main ways to look up information about a Widget: by `tag`, by instance `id`, by Widget Host, and [by characteristics](#widgetsmatchall).
 
 #### `widgets.getByTag()`
 
@@ -510,12 +510,35 @@ The `getByInstance` method is used to look up a specific `Widget` based on the e
 1. Return <var>promise</var>.
 
 
+#### `widgets.getByHost()`
+
+The `getByHost` method is used to look up all `Widget`s that have a `WidgetInstance` whose `host` matches <var>id</var>.
+
+* **Argument:** <var>id</var> (String)
+* **Returns:** Array of zero or more `Widget` objects
+
+`getByHost( id )` must run these steps:
+
+1. If the argument <var>id</var> is omitted, return a Promise rejected with a TypeError.
+1. If the argument <var>id</var> is not a String, return a Promise rejected with a TypeError.
+1. Let <var>promise</var> be a new Promise.
+1. Let <var>options</var> be an new Object.
+1. Set <var>options["host"]</var> be the value of <var>id</var>.
+1. Run these substeps in parallel:
+   1. Let <var>search</var> be the result of running the algorithm specified in [matchAll(options)](#widgetsmatchall) with <var>options</var>.
+   1. Wait until <var>search</var> settles.
+   1. If <var>search</var> rejects with an exception, then reject <var>promise</var> with that exception.
+   1. Let <var>matches</var> be the resolution of <var>search</var>.
+   1. Resolve <var>promise</var> with <var>matches</var>.
+1. Return <var>promise</var>.
+
 #### `widgets.matchAll()`
 
 The `matchAll` method is used to find up one or more `Widget`s based on <var>options</var> criteria. The `matchAll` method is analogous to `clients.matchAll()`. It allows developers to limit the scope of matches based on any of the following:
 
 * `tag: "tag_name"` - Only matches a Widget whose `tag` matches `tag` value.
 * `instance: "id"` - Only matches a Widget that has a Widget Instance whose `id` matches the `instance` value.
+* `host: "id"` - Only matches Widgets that have a Widget Instance whose `host` matches the `host` value.
 * `installable: true` - Only matches Widgets supported by a [Widget Host](#dfn-widget-host) on this device.
 * `installed: true` - Only matches Widgets that are currently installed on this device (determined by looking for 1+ members of each Widget’s `instances` array).
 
@@ -534,13 +557,16 @@ The `matchAll` method is used to find up one or more `Widget`s based on <var>opt
          1. If <var>options["installed"]</var> is `true` and <var>instanceCount</var> is 0, continue.
          1. If <var>options["installed"]</var> is `false` and <var>instanceCount</var> is greater than 0, continue.
       1. If <var>options["tag"]</var> is defined and its value does not match <var>widget["tag"]</var>, continue.
-      1. If <var>options["instance"]</var> is defined:
-         1. Let <var>matchingInstance</var> be null.
-         1. For each <var>instance</var> in <var>widget["instances"]</var>:
+      1. Let <var>matchingInstance</var> be null.
+      1. For each <var>instance</var> in <var>widget["instances"]</var>:
+         1. If <var>options["instance"]</var> is defined:
             1. If <var>instance["id"]</var> is equal to <var>options["instance"]</var>
-               1. Set <var>matchingInstance</var> to <var>instance</var> and abort these steps.
-            1. Else continue.
+               1. Set <var>matchingInstance</var> to <var>instance</var>.
+         1. If <var>options["host"]</var> is defined:
+            1. If <var>instance["host"]</var> is equal to <var>options["host"]</var>
+               1. Set <var>matchingInstance</var> to <var>instance</var>.
          1. If <var>matchingInstance</var> is null, continue.
+      1. If <var>matchingInstance</var> is null, continue.
       1. Add <var>widget</var> to <var>matchedWidgets</var>.
    1. Resolve <var>promise</var> with a new frozen array of <var>matchedWidgets</var>.
 1. Return <var>promise</var>.
@@ -578,33 +604,9 @@ Some APIs may return an Error when the widget cannot be created, updated, or rem
 * "Widget instance not found"
 * "Data required by the template was not supplied."
 
-#### `widgets.createInstance()`
-
-Developers will use `createInstance()` to create a new instance of a Widget for a specific host. This method will resolve with the instance `id` if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
-
-* **Arguments:** <var>hostId</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
-* **Returns:** String. The `id` of the `WidgetInstance` that was created.
-
-`createInstance( hostId, payload )` method must run these steps:
-
-1. Let <var>promise</var> be a new promise.
-1. If <var>hostId</var> is null or not a String or <var>payload</var> is null or not an Object or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
-1. Let <var>tag</var> be <var>payload["definition"]["tag"]</var>.
-1. Let <var>widget</var> be the result of running the algorithm specified in [getByTag(tag)](#widgetsgetbytag) with <var>tag</var>.
-1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](#creating-a-default-widgetsettings-object) with <var>widget</var>.
-1. Set <var>payload["definition"]</var> to the result of [injecting manifest members into a `WidgetPayload`](#injecting-manifest-members-into-a-payload) with <var>payload</var>.
-1. Let <var>instanceId</var> be the result of installing the widget on the device (e.g., by calling the appropriate [Widget Service](#dfn-widget-service) API) with <var>hostId</var> and <var>payload</var>.
-   1. If <var>instanceId</var> is an Error
-      1. Reject <var>promise</var> with <var>instanceId</var> and return promise.
-   1. Else
-      1. Let <var>instance</var> be the result of [creating an instance](#creating-a-widget-instance) with <var>instanceId</var>, <var>hostId</var>, and <var>payload</var>.
-      1. Append <var>instance</var> to <var>widget["instances"]</var>.
-      1. Resolve <var>promise</var> with <var>instanceId</var>.
-1. Return <var>promise</var>.
-
 #### `widgets.updateInstance()`
 
-Developers will use `updateInstance()` to replace or push new data to an existing Widget Instance. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+Developers will use `updateInstance()` to push data to a new or existing [Widget Instance](#dfn-widget-instance). This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
 
 * **Arguments:** <var>instanceId</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
 * **Returns:** *undefined*
@@ -637,7 +639,7 @@ Developers will use `updateInstance()` to replace or push new data to an existin
 
 #### `widgets.updateByTag()`
 
-Developers will use `updateByTag()` to replace or push new data to all Instances of a Widget. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+Developers will use `updateByTag()` to push data to all [Instances](#dfn-widget-instance) of a Widget. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
 
 * **Arguments:** <var>tag</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
 * **Returns:** *undefined*
@@ -722,9 +724,9 @@ There are a host of different events that will take place in the context of a Se
 
 A [`WidgetEvent`](#widget-related-events) is an object with the following properties:
 
-* `host` - This is the GUID for the host (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
-* `action` - This is the primary way you will disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
-* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which would be used to update the widget using `show()` or save its settings using `saveSettings()`.
+* `host` - This is the GUID for the [Widget Host](#dfn-widget-host) (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
+* `action` - This is the primary way to disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
+* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which are necessary to update the widget or save its settings.
 * `data` - This object comprises key/value pairs representing data sent from the [Widget Host](#dfn-widget-host) as part of the event.
 
 ```js
@@ -763,41 +765,89 @@ There are a few special [`WidgetEvent`](#widget-related-events) `action` types t
 * "WidgetSave" - Executed when a Widget has settings and the user saves the settings for a specific `WidgetInstance`.
 * "WidgetResume" - Executed when a [Widget Host](#dfn-widget-host) is switching from its inactive to active state.
 
+### WidgetInstall
+
+When the User Agent receives a request to create a new instance of a widget, it will need to create a placeholder for the instance before triggering the WidgetClick event within the Service Worker.
+
+Required `WidgetEvent` data:
+
+* `host`
+* `widget["id"]`
+* `widget["tag"]`
+
+The <b id="creating-a-placeholder-instance">steps for creating a placeholder instance</b> with WidgetEvent <var>event</var>:
+
+1. Let <var>tag</var> be <var>event["widget"]["tag"]</var>.
+1. Let <var>widget</var> be the result of running the algorithm specified in [getByTag(tag)](#widgetsgetbytag) with <var>tag</var>.
+1. If <var>widget</var> is undefined, exit.
+1. Let <var>payload</var> be an object.
+1. Set <var>payload["data"]</var> to an empty JSON object.
+1. Set <var>payload["settings"]</var> to the result of [creating a default `WidgetSettings` object](#creating-a-default-widgetsettings-object) with <var>widget</var>.
+1. Set <var>payload["definition"]</var> to the value of <var>widget["definition"]</var>.
+1. Set <var>payload</var> to the result of [injecting manifest members into a `WidgetPayload`](#injecting-manifest-members-into-a-payload) with <var>payload</var>.
+1. Let <var>instance</var> be the result of [creating an instance](#creating-a-widget-instance) with <var>event["widget"]["id"]</var>, <var>event["widget"]["host"]</var>, and <var>payload</var>.
+1. Append <var>instance</var> to <var>widget["instances"]</var>.
+
 <p id="install">Here is the flow for install:</p>
 
 ![](media/install.gif)
 
-1. A "WidgetInstall" signal is received by the User Agent and is passed along to the Service Worker.
+1. A "WidgetInstall" signal is received by the User Agent, the placeholder instance is created, and the event is passed along to the Service Worker.
 2. The Service Worker
-    a. captures the Widget `tag` from the `widget` property,
-    b. looks up the Widget via `widgets.matchAll()`, and
+    a. captures the Widget Instance `id` from the `widget` property,
+    b. looks up the Widget via `widgets.getByInstance()`, and
     c. makes a `Request` for its `data` endpoint.
-3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the [Widget Host](#dfn-widget-host) via the `show()` method.
-4. Internally, a new `WidgetInstance` is created — with default `settings` values, if `settings` are defined — and gets pushed into the `instances` array of the corresponding `Widget`.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the [Widget Service](#dfn-widget-service) via the `updateInstance()` method.
+
+### WidgetUninstall
+
+Required `WidgetEvent` data:
+
+* `host`
+* `widget["id"]`
+* `widget["tag"]`
 
 <p id="uninstall">The "uninstall" process is similar:</p>
 
 ![](media/uninstall.gif)
 
-1. The "WidgetUninstall" signal is received by the User Agent.
-2. Internally, the `WidgetInstance` associated with the `host` value of the corresponding `WidgetDefinition` is deleted.
-3. If successful, the "WidgetUninstall" event is issued to the Service Worker.
-3. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
+1. The "WidgetUninstall" signal is received by the User Agent and is passed to the Service Worker.
+1. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
+1. The Service Worker calls `removeInstance()` to complete the removal process.
 
-<p id="save">The "WidgetSave" process works like this:</p>
+### WidgetSave
+
+Required `WidgetEvent` data:
+
+* `host`
+* `widget["id"]`
+* `widget["tag"]`
+* `data`
+
+The "WidgetSave" process works like this:
 
 1. The "WidgetSave" signal is received by the User Agent.
-2. Internally, the `WidgetInstance` matching the `widget.id` value and `host` is examined to see if
-    a. it has settings and
-    b. its `settings` object matches the inbound `data`.
-3. If it has settings and the two do not match, the new data is saved to the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
+2. Internally, the `WidgetInstance` matching the `widget.id` value is examined to see if
+   a. it has settings and
+   b. its `settings` object matches the inbound `data`.
+3. If it has settings and the two do not match, the new `data` is saved to `settings` in the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
 4. The Service Worker receives the event and can react by issuing a request for new data, based on the updated settings values.
 
-<p id="resume">The final special event is "WidgetResume." Many [Widget Hosts](#dfn-widget-host) will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the [Widget Host](#dfn-widget-host) will issue a "WidgetResume" event. Unlike "WidgetInstall," "WidgetUninstall," and "WidgetSave," the "WidgetResume" event does not include a reference to an individual Widget. The Service Worker will need to enumerate its `WidgetClients` and Fetch new data for each.</p>
+### WidgetResume
+
+Many [Widget Hosts](#dfn-widget-host) will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the [Widget Host](#dfn-widget-host) will issue a "WidgetResume" event.
+
+Required `WidgetEvent` data:
+
+* `host`
+
+Using this event, it is expected that the Service Worker will enumerate the Widget Instances associated with the `host` and Fetch new data for each.
 
 ![](media/resume.gif)
 
-Here is how each of these events could be handled in the Service Worker:
+## Example 
+
+Here is how this could come together in a Service Worker:
 
 ```js
 const periodicSync = self.registration.periodicSync;
