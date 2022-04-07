@@ -765,6 +765,28 @@ There are a few special [`WidgetEvent`](#widget-related-events) `action` types t
 * "WidgetSave" - Executed when a Widget has settings and the user saves the settings for a specific `WidgetInstance`.
 * "WidgetResume" - Executed when a [Widget Host](#dfn-widget-host) is switching from its inactive to active state.
 
+The <b id="creating-a-WidgetEvent">steps for creating a WidgetEvent</b> with Widget Service Message <var>message</var> are as follows:
+
+1. Let <var>event</var> be a new ExtendableEvent.
+1. Run the following steps in parallel:
+   1. Set <var>event["host"]</var> to the id of the Widget Host bound to <var>message</var>.
+   1. If <var>message</var> is a request to refresh all widgets
+      1. Set <var>event["action"]</var> to "WidgetResume".
+      1. Set <var>event["widget"]</var> to null.
+      1. Set <var>event["data"]</var> to a new object.
+      1. return <var>event</var>
+   1. Else if <var>message</var> is a request to install a widget, set <var>event["action"]</var> to "WidgetInstall".
+   1. Else if <var>message</var> is a request to uninstall a widget, set <var>event["action"]</var> to "WidgetUninstall".
+   1. Else if <var>message</var> is a request to update a widget’s settings, set <var>event["action"]</var> to "WidgetSave".
+   1. Else set <var>event["action"]</var> to the user action bound to <var>message</var>.
+   1. Set <var>event["widget"]</var> to a new object.
+   1. Let <var>instanceId</var> be the id of the Widget Instance bound to <var>message</var>.
+   1. Set <var>event["widget"]["id"]</var> to <var>instanceId</var>.
+   1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
+   1. Set <var>event["widget"]["tag"]</var> to <var>widget["tag"]</var>.
+   1. Set <var>event["widget"]["actions"]</var> to <var>widget["definition"]["actions"]</var>.
+
+
 ### WidgetInstall
 
 When the User Agent receives a request to create a new instance of a widget, it will need to create a placeholder for the instance before triggering the WidgetClick event within the Service Worker.
