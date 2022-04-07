@@ -774,7 +774,7 @@ The <b id="creating-a-WidgetEvent">steps for creating a WidgetEvent</b> with Wid
       1. Set <var>event["action"]</var> to "WidgetResume".
       1. Set <var>event["widget"]</var> to null.
       1. Set <var>event["data"]</var> to a new object.
-      1. return <var>event</var>
+      1. Return <var>event</var>.
    1. Else if <var>message</var> is a request to install a widget, set <var>event["action"]</var> to "WidgetInstall".
    1. Else if <var>message</var> is a request to uninstall a widget, set <var>event["action"]</var> to "WidgetUninstall".
    1. Else if <var>message</var> is a request to update a widget’s settings, set <var>event["action"]</var> to "WidgetSave".
@@ -785,6 +785,7 @@ The <b id="creating-a-WidgetEvent">steps for creating a WidgetEvent</b> with Wid
    1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
    1. Set <var>event["widget"]["tag"]</var> to <var>widget["tag"]</var>.
    1. Set <var>event["widget"]["actions"]</var> to <var>widget["definition"]["actions"]</var>.
+1. Return <var>event</var>
 
 
 ### WidgetInstall
