@@ -561,10 +561,10 @@ The `matchAll` method is used to find up one or more `Widget`s based on <var>opt
       1. For each <var>instance</var> in <var>widget["instances"]</var>:
          1. If <var>options["instance"]</var> is defined:
             1. If <var>instance["id"]</var> is equal to <var>options["instance"]</var>
-               1. Set <var>matchingInstance</var> to <var>instance</var>.
+               1. Set <var>matchingInstance</var> to <var>instance</var> and exit the loop.
          1. If <var>options["host"]</var> is defined:
             1. If <var>instance["host"]</var> is equal to <var>options["host"]</var>
-               1. Set <var>matchingInstance</var> to <var>instance</var>.
+               1. Set <var>matchingInstance</var> to <var>instance</var> and exit the loop.
          1. If <var>matchingInstance</var> is null, continue.
       1. If <var>matchingInstance</var> is null, continue.
       1. Add <var>widget</var> to <var>matchedWidgets</var>.
