@@ -120,7 +120,7 @@ A Widget’s network connection and update cycle is governed by a [Service Worke
 
 ## Templated Widgets
 
-In more restrictive or resource-limited scenarios, a [Widget Host](#dfn-widget-host) may choose to provide enable widgets via an internal templating system. Templated widgets may be more limited in their customization through use of the PWA’s `icons`, `theme_color`, and `background_color` (similar to [Notifications](https://notifications.spec.whatwg.org/#lifetime-and-ui-integrations)) or they may be fully-customizable through some form of templating language. Examples of structured templates include an agenda, calendar, mailbox, and a task list. A [Widget Host](#dfn-widget-host)’s complete list of available templates will likely vary by [Widget Host](#dfn-widget-host). This proposal suggests [list of widgets template types](#Suggested-template-types) as a reasonable starting point.
+In more restrictive or resource-limited scenarios, a [Widget Host](#dfn-widget-host) may choose to provide enable widgets via an internal templating system. Templated widgets may be more limited in their customization through use of the PWA’s `icons`, `theme_color`, and `background_color` (similar to [Notifications](https://notifications.spec.whatwg.org/#lifetime-and-ui-integrations)) or they may be fully-customizable through some form of templating language. Examples of structured templates include an agenda, calendar, mailbox, and a task list. A [Widget Host](#dfn-widget-host)’s complete list of available templates will likely vary by [Widget Host](#dfn-widget-host). This proposal suggests [this list of widgets template types](#Suggested-template-types) as a reasonable starting point.
 
 ### Suggested template types
 
@@ -154,7 +154,7 @@ For auth-requiring Widgets:
 
 ### Data flow in a Templated Widget
 
-Templated Widgets support user interaction through one or more [developer-defined `WidgetAction` objects](#Defining-a-WidgetAction)s, which are analogous to a [`NotificationAction`](https://notifications.spec.whatwg.org/#dictdef-notificationaction).
+Templated Widgets support user interaction through one or more [developer-defined `WidgetAction` objects](#Defining-a-WidgetAction), which are analogous to a [`NotificationAction`](https://notifications.spec.whatwg.org/#dictdef-notificationaction).
 
 Data flow in a Templated Widget is largely managed in two ways:
 
@@ -395,7 +395,6 @@ Each Widget is represented within the `Widgets` interface as a `Widget`. Each Wi
 
 ```js
 {
-  "tag": "agenda",
   "installable": true,
   "hasSettings": false,
   "definition": { },
@@ -405,7 +404,6 @@ Each Widget is represented within the `Widgets` interface as a `Widget`. Each Wi
 
 All properties are Read Only to developers and are updated by the User Agent as appropriate.
 
-* `tag` - String. The unique `tag` defined for the Widget in the Manifest.
 * `installable` - Boolean. Indicates whether the Widget is installable (based on UA logic around regarding data `type`, chosen `template`, etc.).
 * `hasSettings` - Boolean. Indicates whether the `WidgetDefinition` includes a non-empty `settings` array.
 * `definition` - Object. The original, as-authored, `WidgetDefinition` provided in the Manifest. Includes any [proprietary extensions](#Extensibility)).
@@ -725,19 +723,17 @@ There are a host of different events that will take place in the context of a Se
 A [`WidgetEvent`](#widget-related-events) is an object with the following properties:
 
 * `host` - This is the GUID for the [Widget Host](#dfn-widget-host) (and is used for internal bookkeeping, such as which host is requesting install/uninstall).
+* `instance` - This is the GUID for the [Widget Instance](#dfn-widget-instance).
+* `tag` - This is the `tag` for the Widget.
 * `action` - This is the primary way to disambiguate events. The names of the events may be part of a standard lifecycle or app-specific, based on any [`WidgetAction` that has been defined](#Defining-a-WidgetAction).
-* `widget` - This is a reference to the Widget itself. As with Notifications, this object provides access to details about the Widget, most importantly its instance `id` and `tag`, which are necessary to update the widget or save its settings.
-* `data` - This object comprises key/value pairs representing data sent from the [Widget Host](#dfn-widget-host) as part of the event.
+* `data` - This object comprises key/value pairs representing data sent from the [Widget Host](#dfn-widget-host) as part of the event. This could be, for example, the settings values to be saved to the [Widget Instance](#dfn-widget-instance).
 
 ```js
 {
   "host": {{ GUID }},
+  "instance": {{ GUID }},
+  "tag": "agenda",
   "action": "create-event",
-  "widget": {
-    "id": {{ GUID }},
-    "tag": "agenda",
-    "actions": [ ]
-  },
   "data": { }
 }
 ```
@@ -769,22 +765,21 @@ The <b id="creating-a-WidgetEvent">steps for creating a WidgetEvent</b> with Wid
 
 1. Let <var>event</var> be a new ExtendableEvent.
 1. Run the following steps in parallel:
+   1. Set <var>event["data"]</var> to a new object.
    1. Set <var>event["host"]</var> to the id of the Widget Host bound to <var>message</var>.
    1. If <var>message</var> is a request to refresh all widgets
       1. Set <var>event["action"]</var> to "WidgetResume".
-      1. Set <var>event["widget"]</var> to null.
-      1. Set <var>event["data"]</var> to a new object.
       1. Return <var>event</var>.
    1. Else if <var>message</var> is a request to install a widget, set <var>event["action"]</var> to "WidgetInstall".
    1. Else if <var>message</var> is a request to uninstall a widget, set <var>event["action"]</var> to "WidgetUninstall".
    1. Else if <var>message</var> is a request to update a widget’s settings, set <var>event["action"]</var> to "WidgetSave".
    1. Else set <var>event["action"]</var> to the user action bound to <var>message</var>.
-   1. Set <var>event["widget"]</var> to a new object.
    1. Let <var>instanceId</var> be the id of the Widget Instance bound to <var>message</var>.
-   1. Set <var>event["widget"]["id"]</var> to <var>instanceId</var>.
+   1. Set <var>event["instance"]</var> to <var>instanceId</var>.
    1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
-   1. Set <var>event["widget"]["tag"]</var> to <var>widget["tag"]</var>.
-   1. Set <var>event["widget"]["actions"]</var> to <var>widget["definition"]["actions"]</var>.
+   1. Set <var>event["tag"]</var> to <var>widget["tag"]</var>.
+   1. If <var>message</var> includes bound data,
+      1. Set <var>event["data"]</var> to the data value bound to <var>message</var>.
 1. Return <var>event</var>
 
 
@@ -795,8 +790,8 @@ When the User Agent receives a request to create a new instance of a widget, it 
 Required `WidgetEvent` data:
 
 * `host`
-* `widget["id"]`
-* `widget["tag"]`
+* `instance`
+* `tag`
 
 The <b id="creating-a-placeholder-instance">steps for creating a placeholder instance</b> with WidgetEvent <var>event</var>:
 
@@ -827,8 +822,8 @@ The <b id="creating-a-placeholder-instance">steps for creating a placeholder ins
 Required `WidgetEvent` data:
 
 * `host`
-* `widget["id"]`
-* `widget["tag"]`
+* `instance`
+* `tag`
 
 <p id="uninstall">The "uninstall" process is similar:</p>
 
@@ -843,8 +838,8 @@ Required `WidgetEvent` data:
 Required `WidgetEvent` data:
 
 * `host`
-* `widget["id"]`
-* `widget["tag"]`
+* `instance`
+* `tag`
 * `data`
 
 The "WidgetSave" process works like this:
@@ -872,7 +867,6 @@ Using this event, it is expected that the Service Worker will enumerate the Widg
 
 Here is how this could come together in a Service Worker:
 
-```js
 const periodicSync = self.registration.periodicSync;
 
 async function updateWidget( widget ){
@@ -912,69 +906,75 @@ self.addEventListener('widgetclick', function(event) {
 
   const action = event.action;
   const host_id = event.host;
-  
-  event.waitUntil(
-
+  const tag = event.tag;
+  const instance_id = event.instance;
+    
     // If a widget is being installed
     switch action:
+      
       case "WidgetInstall":
-        let widget = widgets.getByTag( event.widget.tag );
-        console.log("installing", widget);
-        
-        // get the data needed
-        fetch( widget.data )
-          .then( response => {
-            let payload = {
-              definition: widget.definition,
-              data: response.body
-            };
-            // show the widget, passing in 
-            // the widget definition and data
-            widgets
-              .createInstance( host_id, payload )
-              .then(()=>{
-                // if the widget is set up to auto-update…
-                if ( "update" in widget.definition ) {
-                  let tags = await registration.periodicSync.getTags();
-                  // only one registration per tag
-                  if ( ! tags.includes( widget.tag ) ) {
-                    periodicSync.register( widget.tag, {
-                        minInterval: widget.definition.update
+        console.log("installing", widget, instance_id);
+        event.waitUntil(
+          // find the widget
+          widgets.getByTag( tag )
+            .then( widget => {
+              // get the data needed
+              fetch( widget.data )
+                .then( response => {
+                  let payload = {
+                    definition: widget.definition,
+                    data: response.body
+                  };
+                  // show the widget, passing in 
+                  // the widget definition and data
+                  widgets
+                    .updateInstance( instance_id, payload )
+                    .then(()=>{
+                      // if the widget is set up to auto-update…
+                      if ( "update" in widget.definition ) {
+                        let tags = await registration.periodicSync.getTags();
+                        // only one registration per tag
+                        if ( ! tags.includes( tag ) ) {
+                          periodicSync.register( tag, {
+                              minInterval: widget.definition.update
+                          });
+                        }
+                      }
                     });
-                  }
-                }
-              });
-          });
-        return;
+                })
+            })
+        );
       
       case "WidgetUninstall":
-        let instance_id = event.widget.id;
-        let widget = widgets.getByInstance( instance_id );
-
-        console.log("uninstalling", widget.name, "instance", instance_id);
-        
-        widgets.removeInstance( instance_id );
-        // do any cleanup that’s needed
-        
-        return;
+        event.waitUntil(
+          // find the widget
+          widgets.getByInstance( instance_id )
+            .then( widget => {
+              console.log("uninstalling", widget.definition.name, "instance", instance_id);
+              // clean up periodic sync?
+              if ( widget.instances.length === 1 && "update" in widget.definition )
+              {
+                await periodicSync.unregister( tag );
+              }
+              widgets.removeInstance( instance_id );
+            })
+        );
 
       case "WidgetResume":
         console.log("resuming all widgets");
-
-        // refresh the data on each widget (using Clients, just to show it can be done)
-        widgets
-          .matchAll({ installed: true })
-          .then(function(widgetList) {
-            for (let i = 0; i < widgetList.length; i++) {
-              updateWidget( widgetList[i] );
-            }
-          });
-
-        return;
+        event.waitUntil(
+          // refresh the data on each widget (using Clients, just to show it can be done)
+          widgets.matchAll({ installed: true })
+            .then(function(widgetList) {
+              for (let i = 0; i < widgetList.length; i++) {
+                updateWidget( widgetList[i] );
+              }
+            })
+        );
       
       // other cases
     }
-  );
+  });
 
 });
 
@@ -989,6 +989,7 @@ self.addEventListener('periodicsync', event => {
   // Other logic for different tags as needed.
 });
 ```
+
 
 ## Internationalization
 
