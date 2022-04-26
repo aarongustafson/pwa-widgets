@@ -2,7 +2,10 @@
 
 Playing with some ideas around widget definitions for PWAs.
 
-**Note: These are my own ideas and are not reflective of anything my employer may or may not do in the future. I am just doing some thinking around what Widgets could be like if we were able to connect them to a PWA.**
+**Notes:**
+
+1. These are my own ideas and are not reflective of anything my employer may or may not do in the future. I am just doing some thinking around what Widgets could be like if we were able to connect them to a PWA.
+2. My colleagues & I on the Edge team are beginning to look seriously at enabling web widgets. To follow along with that work, consult [the Explainer on the Microsoft Edge repo](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/PWAWidgets/README.md). I will do my best to keep this doc up to date as we make tweaks to the APIs, but please recognize it may become out of sync from time to time.
 
 ## The idea
 
