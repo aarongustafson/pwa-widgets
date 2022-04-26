@@ -833,6 +833,8 @@ Required `WidgetEvent` data:
 1. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
 1. The Service Worker calls `removeInstance()` to complete the removal process.
 
+Note: When a PWA is uninstalled, its widgets must also be uninstalled. In this event, the User Agent must prompt the [Widget Service](#dfn-widget-service) to remove all associated widgets. If the UA purges all site data and the Service Worker during this process, no further steps are necessary. However, if the UA does not purge all data, it must issue uninstall events for each Widget Instance so that the Service Worker may unregister related Periodic Syncs and perform any additional cleanup.
+
 ### WidgetSave
 
 Required `WidgetEvent` data:
