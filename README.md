@@ -274,7 +274,7 @@ A Manifest’s [`theme_color`](https://w3c.github.io/manifest/#theme_color-membe
 A developer MAY define the following UI-related properties:
 
 * `actions` - An array of [`WidgetAction` objects](#Defining-a-WidgetAction) that will be exposed to users (if the template supports them) within an action-supporting template and trigger an event within the origin’s Service Worker.
-* `settings` - A array of [`WidgetSetting` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently within a [Widget Host](#dfn-widget-host) (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
+* `settings` - A array of [`WidgetSettingDefinition` objects](#Defining-a-WidgetSetting) that enable multiple instances of the same widget to be configured differently within a [Widget Host](#dfn-widget-host) (e.g., a weather widget that displays a single locale could be installed multiple times, targeting different cities).
 
 ### Defining a `WidgetAction`
 
@@ -292,7 +292,7 @@ The `action` and `title` properties are required. The `icons` array is optional 
 
 When activated, a `WidgetAction` will dispatch a [`WidgetEvent`](#widget-related-events) (modeled on [`NotificationEvent`](https://notifications.spec.whatwg.org/#example-50e7c86c)) within its Service Worker. Within the Service Worker, the event will contain a payload that includes a reference to the Widget itself and the `action` value.
 
-### Defining a `WidgetSetting`
+### Defining a `WidgetSettingDefinition`
 
 A `WidgetSetting` defines a single field for use in a widget’s setting panel.
 
@@ -872,6 +872,7 @@ Using this event, it is expected that the Service Worker will enumerate the Widg
 
 Here is how this could come together in a Service Worker:
 
+```js
 const periodicSync = self.registration.periodicSync;
 
 async function updateWidget( widget ){
@@ -907,83 +908,85 @@ async function updateWidget( widget ){
   }
 }
 
-self.addEventListener('widgetclick', function(event) {
+self.addEventListener("widgetclick", function(event) {
 
   const action = event.action;
   const host_id = event.host;
   const tag = event.tag;
   const instance_id = event.instance;
     
-    // If a widget is being installed
-    switch action:
-      
-      case "WidgetInstall":
-        console.log("installing", widget, instance_id);
-        event.waitUntil(
-          // find the widget
-          widgets.getByTag( tag )
-            .then( widget => {
-              // get the data needed
-              fetch( widget.data )
-                .then( response => {
-                  let payload = {
-                    definition: widget.definition,
-                    data: response.body
-                  };
-                  // show the widget, passing in 
-                  // the widget definition and data
-                  widgets
-                    .updateInstance( instance_id, payload )
-                    .then(()=>{
-                      // if the widget is set up to auto-update…
-                      if ( "update" in widget.definition ) {
-                        let tags = await registration.periodicSync.getTags();
-                        // only one registration per tag
-                        if ( ! tags.includes( tag ) ) {
-                          periodicSync.register( tag, {
-                              minInterval: widget.definition.update
-                          });
-                        }
+  // If a widget is being installed
+  switch (action) {
+    
+    case "WidgetInstall":
+      console.log("installing", widget, instance_id);
+      event.waitUntil(
+        // find the widget
+        widgets.getByTag( tag )
+          .then( widget => {
+            // get the data needed
+            fetch( widget.data )
+              .then( response => {
+                let payload = {
+                  definition: widget.definition,
+                  data: response.body
+                };
+                // show the widget, passing in 
+                // the widget definition and data
+                widgets
+                  .updateInstance( instance_id, payload )
+                  .then(()=>{
+                    // if the widget is set up to auto-update…
+                    if ( "update" in widget.definition ) {
+                      let tags = await registration.periodicSync.getTags();
+                      // only one registration per tag
+                      if ( ! tags.includes( tag ) ) {
+                        periodicSync.register( tag, {
+                            minInterval: widget.definition.update
+                        });
                       }
-                    });
-                })
-            })
-        );
-      
-      case "WidgetUninstall":
-        event.waitUntil(
-          // find the widget
-          widgets.getByInstance( instance_id )
-            .then( widget => {
-              console.log("uninstalling", widget.definition.name, "instance", instance_id);
-              // clean up periodic sync?
-              if ( widget.instances.length === 1 && "update" in widget.definition )
-              {
-                await periodicSync.unregister( tag );
-              }
-              widgets.removeInstance( instance_id );
-            })
-        );
+                    }
+                  });
+              })
+          })
+      );
+      break;
+    
+    case "WidgetUninstall":
+      event.waitUntil(
+        // find the widget
+        widgets.getByInstance( instance_id )
+          .then( widget => {
+            console.log("uninstalling", widget.definition.name, "instance", instance_id);
+            // clean up periodic sync?
+            if ( widget.instances.length === 1 && "update" in widget.definition )
+            {
+              await periodicSync.unregister( tag );
+            }
+            widgets.removeInstance( instance_id );
+          })
+      );
+      break;
 
-      case "WidgetResume":
-        console.log("resuming all widgets");
-        event.waitUntil(
-          // refresh the data on each widget (using Clients, just to show it can be done)
-          widgets.matchAll({ installed: true })
-            .then(function(widgetList) {
-              for (let i = 0; i < widgetList.length; i++) {
-                updateWidget( widgetList[i] );
-              }
-            })
-        );
-      
-      // other cases
-    }
-  });
+    case "WidgetResume":
+      console.log("resuming all widgets");
+      event.waitUntil(
+        // refresh the data on each widget (using Clients, just to show it can be done)
+        widgets.matchAll({ host: host_id })
+          .then(function(widgetList) {
+            for (let i = 0; i < widgetList.length; i++) {
+              updateWidget( widgetList[i] );
+            }
+          })
+      );
+      break;
+    
+    // other cases
+  }
 
 });
 
-self.addEventListener('periodicsync', event => {
+self.addEventListener("periodicsync", event => {
   const tag = event.tag;
   
   const widget = widgets.getByTag( tag );
