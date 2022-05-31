@@ -161,7 +161,7 @@ Templated Widgets support user interaction through one or more [developer-define
 
 Data flow in a Templated Widget is largely managed in two ways:
 
-1. Data flows from the Service Worker to a Widget instance as part of the [`widgets.createInstance()`](#widgetscreateinstance), [`widgets.updateInstance()`](#widgetsupdateinstance), and [`widgets.updateByTag()`](#widgetsupdatebytag) methods.
+1. Data flows from the Service Worker to a Widget instance as part of the [`widgets.createInstance()`](#widgetscreateinstance), [`widgets.updateByInstanceId()`](#widgetsupdatebyinstanceid), and [`widgets.updateByTag()`](#widgetsupdatebytag) methods.
 2. Data (in the form of interaction) flows from a Widget to the associated Service Worker via [`WidgetEvent`](#widget-related-events)s.
 
 Here is an example of how this might look in the context of a Periodic Sync:
@@ -177,7 +177,7 @@ This video shows the following steps:
 1. As part of a Periodic Sync, the Service Worker makes a Request to the host or some other endpoint.
 2. The Response comes back.
 3. As the Service Worker is aware of which widgets rely on that data, via the `WidgetDefinition` provided during [install](#dfn-install), the Service Worker can identify which widgets need updating. (This is internal logic and not shown in the video).
-3. The Service Worker takes that data—perhaps packaging it with other instructions—and uses [`widgets.updateInstance()`](#widgetsupdateinstance) (or [`widgets.updateByTag()`](#widgetsupdatebytag)) to update the specific widgets that make use of that data.
+3. The Service Worker takes that data—perhaps packaging it with other instructions—and uses [`widgets.updateByInstanceId()`](#widgetsupdatebyinstanceid) (or [`widgets.updateByTag()`](#widgetsupdatebytag)) to update the specific widgets that make use of that data.
 
 To show a more complicated example, consider what should happen if certain Widgets depend on authentication and the user happens to log out in the PWA or a browser tab. The developers would need to track this and ensure the Service Worker is notified so it can replace any auth-requiring Widgets with a prompt back into the app to log in.
 
@@ -208,7 +208,7 @@ This video shows:
 2. The Service Worker is listening for that action and redirects the user to the login page of the app, either within an existing Client or in a new Client (if one is not open).
 3. The user logs in and the app sends a `postMessage()` to the Service Worker letting it know the user is authenticated again.
 4. The Service Worker grabs new data for its auth-related widgets from the network.
-5. The Service Worker pipes that data back into the auth-requiring Widgets using [`widgets.updateInstance()`](#widgetsupdateinstance) (or [`widgets.updateByTag()`](#widgetsupdatebytag)).
+5. The Service Worker pipes that data back into the auth-requiring Widgets using [`widgets.updateByInstanceId()`](#widgetsupdatebyinstanceid) (or [`widgets.updateByTag()`](#widgetsupdatebytag)).
 
 You can see more examples in [the `WidgetEvent` section](#Widget-related-Events).
 
@@ -380,11 +380,11 @@ The steps for <b id="determining-installability">determining install-ability</b>
 This proposal introduces a `widgets` attribute to the [`ServiceWorkerGlobalScope`](https://www.w3.org/TR/service-workers/#serviceworkerglobalscope-interface). This attribute references the `Widgets` interface (which is analogous to `Clients`) that exposes the following Promise-based methods:
 
 * `getByTag()` - Requires an <var>tag</var> that matches a Widget’s `tag`. Returns a Promise that resolves to a `Widget` or *undefined*.
-* `getByInstance()` - Requires an instance <var>id</var> that is used to find the associated `Widget`. Returns a Promise that resolves to a `Widget` or *undefined*.
+* `getByInstanceId()` - Requires an instance <var>id</var> that is used to find the associated `Widget`. Returns a Promise that resolves to a `Widget` or *undefined*.
 * `matchAll()` - Requires [an `options` argument](#Options-for-Matching). Returns a Promise that resolves to an array of zero or more [`Widget` objects](#the-widget-object) that match the `options` criteria.
 * `createInstance()` - Requires a host `id` and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to the [`WidgetInstance`](#the-widgetinstance-object) `id` or Error.
-* `updateInstance()` - Requires an instance `id` and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to *undefined* or Error.
-* `removeInstance()` - Requires an instance `id`. Returns a Promise that resolves to *undefined* or Error.
+* `updateByInstanceId()` - Requires an instance `id` and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to *undefined* or Error.
+* `removeByInstanceId()` - Requires an instance `id`. Returns a Promise that resolves to *undefined* or Error.
 * `updateByTag()` - Requires an <var>tag</var> and a [<var>payload</var> Object](#the-widgetpayload-object). Returns a Promise that resolves to *undefined* or Error.
 * `removeByTag()` - Requires an <var>tag</var>. Returns a Promise that resolves to *undefined* or Error.
 
@@ -484,14 +484,14 @@ The `getByTag` method is used to look up a specific `Widget` based on its `tag`.
 1. Return <var>promise</var>.
 
 
-#### `widgets.getByInstance()`
+#### `widgets.getByInstanceId()`
 
-The `getByInstance` method is used to look up a specific `Widget` based on the existence of a `WidgetInstance` object whose `id` matches <var>id</var>.
+The `getByInstanceId` method is used to look up a specific `Widget` based on the existence of a `WidgetInstance` object whose `id` matches <var>id</var>.
 
 * **Argument:** <var>id</var> (String)
 * **Returns:** `Widget` or *undefined*
 
-`getByInstance( id )` must run these steps:
+`getByInstanceId( id )` must run these steps:
 
 1. If the argument <var>id</var> is omitted, return a Promise rejected with a TypeError.
 1. If the argument <var>id</var> is not a String, return a Promise rejected with a TypeError.
@@ -511,14 +511,14 @@ The `getByInstance` method is used to look up a specific `Widget` based on the e
 1. Return <var>promise</var>.
 
 
-#### `widgets.getByHost()`
+#### `widgets.getByHostId()`
 
-The `getByHost` method is used to look up all `Widget`s that have a `WidgetInstance` whose `host` matches <var>id</var>.
+The `getByHostId` method is used to look up all `Widget`s that have a `WidgetInstance` whose `host` matches <var>id</var>.
 
 * **Argument:** <var>id</var> (String)
 * **Returns:** Array of zero or more `Widget` objects
 
-`getByHost( id )` must run these steps:
+`getByHostId( id )` must run these steps:
 
 1. If the argument <var>id</var> is omitted, return a Promise rejected with a TypeError.
 1. If the argument <var>id</var> is not a String, return a Promise rejected with a TypeError.
@@ -605,18 +605,18 @@ Some APIs may return an Error when the widget cannot be created, updated, or rem
 * "Widget instance not found"
 * "Data required by the template was not supplied."
 
-#### `widgets.updateInstance()`
+#### `widgets.updateByInstanceId()`
 
-Developers will use `updateInstance()` to push data to a new or existing [Widget Instance](#dfn-widget-instance). This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+Developers will use `updateByInstanceId()` to push data to a new or existing [Widget Instance](#dfn-widget-instance). This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
 
 * **Arguments:** <var>instanceId</var> (String) and <var>payload</var> ([`WidgetPayload` Object](#widget-payload))
 * **Returns:** *undefined*
 
-`updateInstance( instanceId, payload )` method must run these steps:
+`updateByInstanceId( instanceId, payload )` method must run these steps:
 
 1. Let <var>promise</var> be a new promise.
 1. If <var>instanceId</var> is null or not a String or <var>payload</var> is null or not an Object or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
-1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
+1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstanceId(instanceId)](#widgetsgetbyinstanceid) with <var>instanceId</var>.
 1. Let <var>widgetInstance</var> be null.
 1. For <var>i</var> in <var>widget["instances"]</var>:
    1. If <var>i["id"]</var> is equal to <var>instanceId</var>
@@ -666,14 +666,14 @@ Developers will use `updateByTag()` to push data to all [Instances](#dfn-widget-
 1. If <var>instancesUpdated</var> is not equal to <var>instanceCount</var>, then reject <var>promise</var> with an Error and return <var>promise</var>.
 1. Resolve and return <var>promise</var>.
 
-#### `widgets.removeInstance()`
+#### `widgets.removeByInstanceId()`
 
-Developers will use `removeInstance()` to remove an existing Widget Instance from its Host. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
+Developers will use `removeByInstanceId()` to remove an existing Widget Instance from its Host. This method will resolve with *undefined* if successful, but should throw [a descriptive Error](#widget-errors) if one is encountered.
 
 * **Arguments:** <var>instanceId</var> (String)
 * **Returns:** *undefined*
 
-`removeInstance( instanceId )` method must run these steps:
+`removeByInstanceId( instanceId )` method must run these steps:
 
 1. Let <var>promise</var> be a new promise.
 1. If <var>instanceId</var> is null or not a String or <var>this</var>’s active worker is null, then reject <var>promise</var> with a TypeError and return <var>promise</var>.
@@ -682,7 +682,7 @@ Developers will use `removeInstance()` to remove an existing Widget Instance fro
    1. Reject <var>promise</var> with <var>operation</var> and return promise.
 1. Else
    1. Let <var>removed</var> be false.
-   1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
+   1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstanceId(instanceId)](#widgetsgetbyinstanceid) with <var>instanceId</var>.
    1. For each <var>instance</var> in <var>widget["instances"]</var>
       1. If <var>instance["id"] is equal to <var>instanceId</var>
          1. Remove <var>instance</var> from <var>widget["instances"]</var>
@@ -779,14 +779,14 @@ The <b id="creating-a-WidgetEvent">steps for creating a WidgetEvent</b> with Wid
    1. Else set <var>event["action"]</var> to the user action bound to <var>message</var>.
    1. Let <var>instanceId</var> be the id of the Widget Instance bound to <var>message</var>.
    1. Set <var>event["instance"]</var> to <var>instanceId</var>.
-   1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstance(instanceId)](#widgetsgetbyinstance) with <var>instanceId</var>.
+   1. Let <var>widget</var> be the result of running the algorithm specified in [getByInstanceId(instanceId)](#widgetsgetbyinstanceid) with <var>instanceId</var>.
    1. Set <var>event["tag"]</var> to <var>widget["tag"]</var>.
    1. If <var>message</var> includes bound data,
       1. Set <var>event["data"]</var> to the data value bound to <var>message</var>.
 1. Return <var>event</var>
 
 
-### WidgetInstall
+### widget-install
 
 When the User Agent receives a request to create a new instance of a widget, it will need to create a placeholder for the instance before triggering the WidgetClick event within the Service Worker.
 
@@ -816,11 +816,11 @@ The <b id="creating-a-placeholder-instance">steps for creating a placeholder ins
 1. A "WidgetInstall" signal is received by the User Agent, the placeholder instance is created, and the event is passed along to the Service Worker.
 2. The Service Worker
     a. captures the Widget Instance `id` from the `widget` property,
-    b. looks up the Widget via `widgets.getByInstance()`, and
+    b. looks up the Widget via `widgets.getByInstanceId()`, and
     c. makes a `Request` for its `data` endpoint.
-3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the [Widget Service](#dfn-widget-service) via the `updateInstance()` method.
+3. The Service Worker then combines the `Response` with the Widget definition and passes that along to the [Widget Service](#dfn-widget-service) via the `updateByInstanceId()` method.
 
-### WidgetUninstall
+### widget-uninstall
 
 Required `WidgetEvent` data:
 
@@ -834,11 +834,11 @@ Required `WidgetEvent` data:
 
 1. The "WidgetUninstall" signal is received by the User Agent and is passed to the Service Worker.
 1. The Service Worker runs any necessary cleanup steps (such as un-registering a Periodic Sync if the widget is no longer in use).
-1. The Service Worker calls `removeInstance()` to complete the removal process.
+1. The Service Worker calls `removeByInstanceId()` to complete the removal process.
 
 Note: When a PWA is uninstalled, its widgets must also be uninstalled. In this event, the User Agent must prompt the [Widget Service](#dfn-widget-service) to remove all associated widgets. If the UA purges all site data and the Service Worker during this process, no further steps are necessary. However, if the UA does not purge all data, it must issue uninstall events for each Widget Instance so that the Service Worker may unregister related Periodic Syncs and perform any additional cleanup.
 
-### WidgetSave
+### widget-save
 
 Required `WidgetEvent` data:
 
@@ -856,7 +856,7 @@ The "WidgetSave" process works like this:
 3. If it has settings and the two do not match, the new `data` is saved to `settings` in the `WidgetInstance` and the "WidgetSave" event issued to the Service Worker.
 4. The Service Worker receives the event and can react by issuing a request for new data, based on the updated settings values.
 
-### WidgetResume
+### widget-resume
 
 Many [Widget Hosts](#dfn-widget-host) will suspend the rendering surface when it is not in use (to conserve resources). In order to ensure Widgets are refreshed when the rendering surface is presented, the [Widget Host](#dfn-widget-host) will issue a "WidgetResume" event.
 
@@ -892,7 +892,7 @@ async function updateWidget( widget ){
           definition: widget.definition,
           data: response.body
         };
-        widgets.updateInstance( instance.id, payload );
+        widgets.updateByInstanceId( instance.id, payload );
       });
     });
   // other widgets can be updated en masse via their tags
@@ -918,7 +918,7 @@ self.addEventListener("widgetclick", function(event) {
   // If a widget is being installed
   switch (action) {
     
-    case "WidgetInstall":
+    case "widget-install":
       console.log("installing", widget, instance_id);
       event.waitUntil(
         // find the widget
@@ -934,7 +934,7 @@ self.addEventListener("widgetclick", function(event) {
                 // show the widget, passing in 
                 // the widget definition and data
                 widgets
-                  .updateInstance( instance_id, payload )
+                  .updateByInstanceId( instance_id, payload )
                   .then(()=>{
                     // if the widget is set up to auto-update…
                     if ( "update" in widget.definition ) {
@@ -952,10 +952,10 @@ self.addEventListener("widgetclick", function(event) {
       );
       break;
     
-    case "WidgetUninstall":
+    case "widget-uninstall":
       event.waitUntil(
         // find the widget
-        widgets.getByInstance( instance_id )
+        widgets.getByInstanceId( instance_id )
           .then( widget => {
             console.log("uninstalling", widget.definition.name, "instance", instance_id);
             // clean up periodic sync?
@@ -963,16 +963,16 @@ self.addEventListener("widgetclick", function(event) {
             {
               await periodicSync.unregister( tag );
             }
-            widgets.removeInstance( instance_id );
+            widgets.removeByInstanceId( instance_id );
           })
       );
       break;
 
-    case "WidgetResume":
+    case "widget-resume":
       console.log("resuming all widgets");
       event.waitUntil(
         // refresh the data on each widget (using Clients, just to show it can be done)
-        widgets.matchAll({ host: host_id })
+        widgets.getByHostId(host_id)
           .then(function(widgetList) {
             for (let i = 0; i < widgetList.length; i++) {
               updateWidget( widgetList[i] );
