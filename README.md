@@ -212,8 +212,10 @@ This video shows:
 
 You can see more examples in [the `WidgetEvent` section](#Widget-related-Events).
 
+<hr>
+
 <details>
-<summary>This section contains my original proposal and is not up to date with the latest imeplementation in Edge. I’ve maintained it for posterity only</summary>
+<summary><b>This remainder of this document contains my original proposal and <em>is not up to date with the latest imeplementation in Edge</em>. I’ve maintained it for posterity only.</b></summary>
 
 ## Defining a Widget
 
