@@ -212,6 +212,9 @@ This video shows:
 
 You can see more examples in [the `WidgetEvent` section](#Widget-related-Events).
 
+<details>
+<summary>This section contains my original proposal and is not up to date with the latest imeplementation in Edge. I’ve maintained it for posterity only</summary>
+
 ## Defining a Widget
 
 One or more Widgets are defined within the `widgets` member of a Web App Manifest. The `widgets` member would be an array of `WidgetDefinition` objects.
@@ -998,6 +1001,7 @@ self.addEventListener("periodicsync", event => {
 });
 ```
 
+</details>
 
 ## Internationalization
 
